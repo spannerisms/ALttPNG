@@ -501,7 +501,7 @@ public class PNGto4BPP {
 				// success
 				JOptionPane.showMessageDialog(frame,
 						"Sprite file successfully written to " + (new File(loc).getName()),
-						"Oops",
+						"YAY",
 						JOptionPane.PLAIN_MESSAGE);
 			}});
 	}
