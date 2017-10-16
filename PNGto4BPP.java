@@ -717,23 +717,27 @@ public class PNGto4BPP {
 	}
 
 	/**
-	 * Takes an int color and rounds each color value to the nearest 8;
-	 * @param color - integer color RRRGGGBBB
-	 * @return
+	 * Takes every color in a palette and rounds each byte to the nearest 8.
+	 * @param pal - palette to round
 	 */
-	public static int round8(int color) {
-		int r = color / 1000000;
-		int g = (color % 1000000) / 1000;
-		int b = color % 1000;
-		r = (r / 8) * 8;
-		g = (g / 8) * 8;
-		b = (b / 8) * 8;
-		return (r * 1000000) + (g * 1000) + b;
+	public static int[] roundPalette(int[] pal) {
+		int[] ret = new int[pal.length];
+		for (int i = 0; i < pal.length; i++) {
+			int color = pal[i];
+			int r = color / 1000000;
+			int g = (color % 1000000) / 1000;
+			int b = color % 1000;
+			r = (r / 8) * 8;
+			g = (g / 8) * 8;
+			b = (b / 8) * 8;
+			ret[i] = (r * 1000000) + (g * 1000) + b;
+		}
+		return ret;
 	}
 
 	/**
 	 * Rounds every byte in an image to the nearest 8.
-	 * 
+	 * @param raster - image raster to round
 	 */
 	public static byte[] roundRaster(byte[] raster) {
 		byte[] ret = new byte[raster.length];
