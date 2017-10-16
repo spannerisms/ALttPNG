@@ -732,6 +732,19 @@ public class PNGto4BPP {
 	}
 
 	/**
+	 * Rounds every byte in an image to the nearest 8.
+	 * 
+	 */
+	public static byte[] roundRaster(byte[] raster) {
+		byte[] ret = new byte[raster.length];
+		for (int i = 0; i < raster.length; i++) {
+			int v = (i+256) % 256;
+			v = (v / 8) * 8;
+			ret[i] = (byte) v;
+		}
+		return ret;
+	}
+	/**
 	 * Extracts palette colors from last 8x8 block of the image.
 	 * Each row of this 8x8 block represents one-half of a mail palette.
 	 * Row 1 contains green mail's colors 0x0&ndash;0x7;
