@@ -725,14 +725,14 @@ public class PNGto4BPP {
 		int r = color / 1000000;
 		int g = (color % 1000000) / 1000;
 		int b = color % 1000;
-		r = ((r + 4) / 8) * 8;
-		g = ((g + 4) / 8) * 8;
-		b = ((b + 4) / 8) * 8;
+		r = (r / 8) * 8;
+		g = (g / 8) * 8;
+		b = (b / 8) * 8;
 		return (r * 1000000) + (g * 1000) + b;
 	}
 
 	/**
-	 * Extracts palette coors from last 8x8 block of the image.
+	 * Extracts palette colors from last 8x8 block of the image.
 	 * Each row of this 8x8 block represents one-half of a mail palette.
 	 * Row 1 contains green mail's colors 0x0&ndash;0x7;
 	 * row 2 contains green mail's colors 0x8&ndash;0xF; etc.
