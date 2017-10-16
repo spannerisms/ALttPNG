@@ -26,13 +26,17 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 public class PNGto4BPP {
- 
- 
+
 	// to spit out errors
 	public PNGto4BPP() {}
 	static final PNGto4BPP controller = new PNGto4BPP();
-	 
-	//static final FileFilter imageFilter = FileFilter.;
+	
+	// accepted extensions
+	final static String[] IMAGEEXTS = { "png" };
+	final static String[] PALETTEEXTS = { "gpl", "pal", "txt" };
+	final static String[] EXPORTEXTS = { "spr" };
+	
+	// main and stuff
 	public static void main(String[] args) {
 		//try to set Nimbus
 		try {
@@ -51,7 +55,6 @@ public class PNGto4BPP {
 		} // end Nimbus
 		final JFrame frame = new JFrame("PNG to SNES 4BPP");
 		final Dimension d = new Dimension(600,382);
-		final Dimension d2 = new Dimension(9900,882);
 		final JTextField imageName = new JTextField("");
 		final JTextField palName = new JTextField("");
 		final JTextField fileName = new JTextField("");
@@ -64,14 +67,14 @@ public class PNGto4BPP {
  
 		// file explorer
 		final JFileChooser explorer = new JFileChooser();
-		explorer.setSize(d2);
+
 		// set filters
 		FileNameExtensionFilter imgFilter =
-				new FileNameExtensionFilter("PNG files", "png");
+				new FileNameExtensionFilter("PNG files", IMAGEEXTS);
 		FileNameExtensionFilter palFilter =
-				new FileNameExtensionFilter("Palette files", "gpl", "pal", "txt");
+				new FileNameExtensionFilter("Palette files", PALETTEEXTS);
 		FileNameExtensionFilter sprFilter =
-				new FileNameExtensionFilter("Sprite files", "spr");
+				new FileNameExtensionFilter("Sprite files", EXPORTEXTS);
 	 
 		explorer.setAcceptAllFileFilterUsed(false);
 		 
@@ -84,9 +87,6 @@ public class PNGto4BPP {
 		final JPanel palBtnWrapper = new JPanel(new BorderLayout());
 		final JPanel fileNWrapper = new JPanel(new BorderLayout());
 		final JPanel allWrapper = new JPanel(new BorderLayout());
- 
-		imageName.setEditable(false);
-		palName.setEditable(false);
 		
 		// add image button and field
 		imgNWrapper.add(imageName,BorderLayout.CENTER);
@@ -183,11 +183,86 @@ public class PNGto4BPP {
 				BufferedImage img;
 				BufferedImage imgRead;
 				byte[] pixels;
-				File imageFile = new File(imageName.getText());
+				String imgName = imageName.getText();
+				String palletteName = palName.getText();
+				File imageFile = new File(imgName);
 				BufferedReader br;
 				int[] palette = null;
 				byte[] palData = null;
 				byte[][][] eightbyeight;
+				// see which palette method we're using
+				int palChoice = palOptions.getSelectedIndex();
+				
+				// let the program spit out all extension errors at once
+				boolean extensionERR = false;
+				// test image type
+				if (!testFileType(imgName,IMAGEEXTS)) {
+					JOptionPane.showMessageDialog(frame,
+							"Images must be of the following extensions:\n" +
+									join(IMAGEEXTS,", "),
+							"Oops",
+							JOptionPane.WARNING_MESSAGE);
+					extensionERR = true;
+				}
+				// test palette type
+				if (!testFileType(palletteName,PALETTEEXTS) && (palChoice != 2)) {
+					JOptionPane.showMessageDialog(frame,
+							"Palettes must be of the following extensions:\n" +
+									join(PALETTEEXTS,", "),
+							"Oops",
+							JOptionPane.WARNING_MESSAGE);
+					extensionERR = true;
+				}
+				
+				// save location
+				String loc = fileName.getText();
+				boolean bamboozled = false;
+				boolean[] bamboozarino = new boolean[16];
+				if (loc.toLowerCase().matches("bamboozle:\\s*[0-9a-f]+")) {
+					bamboozled = true;
+					loc = loc.replace("bamboozle:","");
+					String HEX = "0123456789ABCDEF";
+					for (int i = 0; i < HEX.length(); i++) {
+						char a = HEX.charAt(i);
+						if (loc.indexOf(a) != -1)
+							bamboozarino[i] = true;
+					}
+					
+					for (int i = 0; i < bamboozarino.length; i++) {
+						if (bamboozarino[i])
+							rando[i] = (byte) i;
+					}
+					loc = "";
+				}
+				
+				// default name
+				if (loc.equals("")) {
+					loc = imgName;
+					try {
+						loc = loc.substring(0,loc.lastIndexOf("."));
+					} catch(StringIndexOutOfBoundsException e) {
+						loc = "oops";
+					} finally {
+						// still add extension here so that the user isn't fooled into thinking they need this field
+						loc += " (" + (bamboozled ? "bamboozled" : "exported") + ").spr";
+					}
+				}
+				
+				// only allow sprite files
+				if (!testFileType(loc,EXPORTEXTS)) {
+					JOptionPane.showMessageDialog(frame,
+							"Export location must be of the following extensions:\n" +
+									join(EXPORTEXTS,", "),
+							"Oops",
+							JOptionPane.WARNING_MESSAGE);
+					extensionERR = true;
+				}
+				
+				// break if any extension related errors
+				if (extensionERR) {
+					return;
+				}
+				
 				// image file
 				try {
 					imgRead = ImageIO.read(imageFile);
@@ -227,14 +302,11 @@ public class PNGto4BPP {
 					return;
 				}
 				 
-				// see which palette method we're using
-				int palChoice = palOptions.getSelectedIndex();
-				 
 				// explicit ASCII palette
 				if (palChoice == 0) {
 					// palette file
 					try {
-						br = getPaletteFile(palName.getText());
+						br = getPaletteFile(palletteName);
 					} catch (FileNotFoundException e) {
 						JOptionPane.showMessageDialog(frame,
 								"Palette file not found",
@@ -242,10 +314,11 @@ public class PNGto4BPP {
 								JOptionPane.WARNING_MESSAGE);
 						return;
 					}
-					String palExt = palName.getText().substring(palName.getText().length()-4);
+					
 					// palette parsing
 					try {
-						if (palExt.toLowerCase() == "txt")
+						// test file type to determine format
+						if (testFileType(palletteName, "txt"))
 							palette = getPaletteColorsFromPaintNET(br);
 						else
 							palette = getPaletteColorsFromFile(br);
@@ -264,7 +337,8 @@ public class PNGto4BPP {
 						return;
 					}
 				}
-				 
+				
+				// binary (YY-CHR) pal
 				if (palChoice == 1) {
 					JOptionPane.showMessageDialog(frame,
 							"Binary .PAL file reading not available yet\nWatch this space :thinking:",
@@ -272,47 +346,13 @@ public class PNGto4BPP {
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
+				
+				// extract from last block
 				if (palChoice == 2) {
 					palette = palExtract(pixels);
 					palData = palDataFromArray(palette);
 				}
-				// save location
-				String loc = fileName.getText();
-				boolean bamboozled = false;
-				boolean[] bamboozarino = new boolean[16];
-				if (loc.toLowerCase().matches("bamboozle:\\s*[0-9a-f]+")) {
-					bamboozled = true;
-					loc = loc.replace("bamboozle:","");
-					String HEX = "0123456789ABCDEF";
-					for (int i = 0; i < HEX.length(); i++) {
-						char a = HEX.charAt(i);
-						if (loc.indexOf(a) != -1)
-							bamboozarino[i] = true;
-					}
-					
-					for (int i = 0; i < bamboozarino.length; i++) {
-						if (bamboozarino[i])
-							rando[i] = (byte) i;
-					}
-					loc = "";
-				}
-				
-				// default name
-				if (loc.equals("")) {
-					loc = imageName.getText();
-					loc = loc.substring(0,loc.length()-4);
-					loc += " (" + (bamboozled ? "bamboozled" : "exported") + ").spr";
-				}
-				
-				// only allow sprite files
-				String locExt = loc.substring(loc.lastIndexOf(".") + 1);
-				if (!locExt.toLowerCase().equals("spr")) {
-					JOptionPane.showMessageDialog(frame,
-							"Sprites must be an .spr file",
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					return;
-				}
+
 					
 				// make the file
 				try {
@@ -324,10 +364,13 @@ public class PNGto4BPP {
 							JOptionPane.WARNING_MESSAGE);
 				}
  
+				// split bytes into blocks
 				eightbyeight = get8x8(pixels, palette);
 				
-				// write data to SPR file
+				
 				byte[] SNESdata = exportPNG(eightbyeight, palData, rando);
+				
+				// write data to SPR file
 				try {
 					writeSPR(SNESdata, loc);
 				} catch (IOException e) {
@@ -337,6 +380,8 @@ public class PNGto4BPP {
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
+				
+				// success
 				JOptionPane.showMessageDialog(frame,
 						"Sprite file successfully written to " + (new File(loc).getName()),
 						"Oops",
@@ -344,6 +389,52 @@ public class PNGto4BPP {
 			}});
 	}
  
+	/**
+	 * gives file extension name from a string
+	 */
+	public static String getFileType(String s) {
+		String ret = s.substring(s.lastIndexOf(".") + 1);
+		return ret;
+	}
+	
+	/**
+	 * test file types
+	 * the way getFileType works should allow both full paths and lone file types to work
+	 * @param s - file name or extension
+	 * @param type - list of all types to test against
+	 * @return
+	 */
+	public static boolean testFileType(String s, String[] type) {
+		boolean ret = false;
+		String filesType = getFileType(s);
+		for (String t : type) {
+			if (filesType.equalsIgnoreCase(t)) {
+				ret = true;
+				break;
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * wrapper for arbitrary arguments
+	 */
+	public static boolean testFileType(String s, String type) {
+		return testFileType(s, new String[] { type });
+	}
+	
+	/**
+	 * Join array of string together
+	 */
+	public static String join(String[] s, String c) {
+		String ret = "";
+		for (int i = 0; i < s.length; i++) {
+			ret += s[i];
+			if (i != s.length-1)
+				ret += c;
+		}
+		return ret;
+	}
 	/**
 	 * Finds the palette file (as a .gpl or .pal) from <tt>palPath<tt>
 	 * @param palPath - full file path of the palette
