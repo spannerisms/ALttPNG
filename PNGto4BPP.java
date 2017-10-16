@@ -717,6 +717,21 @@ public class PNGto4BPP {
 	}
 
 	/**
+	 * Takes an int color and rounds each color value to the nearest 8;
+	 * @param color - integer color RRRGGGBBB
+	 * @return
+	 */
+	public static int round8(int color) {
+		int r = color / 1000000;
+		int g = (color % 1000000) / 1000;
+		int b = color % 1000;
+		r = ((r + 4) / 8) * 8;
+		g = ((g + 4) / 8) * 8;
+		b = ((b + 4) / 8) * 8;
+		return (r * 1000000) + (g * 1000) + b;
+	}
+
+	/**
 	 * Extracts palette coors from last 8x8 block of the image.
 	 * Each row of this 8x8 block represents one-half of a mail palette.
 	 * Row 1 contains green mail's colors 0x0&ndash;0x7;
