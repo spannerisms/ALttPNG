@@ -412,6 +412,9 @@ public class PNGto4BPP {
 					return;
 				}
 
+				// round image raster
+				pixels = roundRaster(pixels);
+
 				// explicit ASCII palette
 				if (palChoice == 0) {
 					// get palette file
@@ -432,6 +435,7 @@ public class PNGto4BPP {
 							palette = getPaletteColorsFromPaintNET(br);
 						else
 							palette = getPaletteColorsFromFile(br);
+						palette = roundPalette(palette);
 						palData = palDataFromArray(palette);
 					} catch (NumberFormatException|IOException e) {
 						JOptionPane.showMessageDialog(frame,
@@ -717,6 +721,20 @@ public class PNGto4BPP {
 	}
 
 	/**
+	 * Rounds every byte in an image to the nearest 8.
+	 * @param raster - image raster to round
+	 */
+	public static byte[] roundRaster(byte[] raster) {
+		byte[] ret = new byte[raster.length];
+		for (int i = 0; i < raster.length; i++) {
+			int v = (raster[i]+256) % 256;
+			v = (v / 8) * 8;
+			ret[i] = (byte) v;
+		}
+		return ret;
+	}
+
+	/**
 	 * Takes every color in a palette and rounds each byte to the nearest 8.
 	 * @param pal - palette to round
 	 */
@@ -731,20 +749,6 @@ public class PNGto4BPP {
 			g = (g / 8) * 8;
 			b = (b / 8) * 8;
 			ret[i] = (r * 1000000) + (g * 1000) + b;
-		}
-		return ret;
-	}
-
-	/**
-	 * Rounds every byte in an image to the nearest 8.
-	 * @param raster - image raster to round
-	 */
-	public static byte[] roundRaster(byte[] raster) {
-		byte[] ret = new byte[raster.length];
-		for (int i = 0; i < raster.length; i++) {
-			int v = (i+256) % 256;
-			v = (v / 8) * 8;
-			ret[i] = (byte) v;
 		}
 		return ret;
 	}
