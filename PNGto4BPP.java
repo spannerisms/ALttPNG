@@ -32,6 +32,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
+import java.io.FileInputStream; 
+
 // class
 public class PNGto4BPP {
 	// to spit out errors
@@ -42,6 +44,25 @@ public class PNGto4BPP {
 	final static String[] PALETTEEXTS = { "gpl", "pal", "txt" };
 	final static String[] EXPORTEXTS = { "spr" };
 	final static String[] LOGEXTS = { "txt" };
+
+	//These fields are utilized by functions
+	static final JTextField imageName = new JTextField("");
+	static final JTextField palName = new JTextField("");
+	static final JTextField fileName = new JTextField("");
+	static String[] palChoices = {"Read an ASCII (.GPL/.PAL)","Binary (YY .PAL)","Extract from the last block of PNG"};
+	static final JComboBox<String> palOptions = new JComboBox<String>(palChoices);
+	static final JFrame frame = new JFrame("PNG to SNES 4BPP");
+
+	static StringWriter debugLogging;
+	static PrintWriter debugWriter;
+
+	///Summary
+	///Command Line Usage:
+	///imgSrc: Full Path for Image
+	///palMethod: palFileMethod [0:ASCII(.GPL|.PAL), 1:Binary(YY .PAL), 2:Extract from Last Block of PNG]
+	///palSrc:(Used if Method 0 or 1 selected): Full Path for Pal File.
+	///sprTarget(optional): Name of Sprite that will be created. Will default to name of imgSrc with new extension. 
+	///romTarget(optional): Path of Rom to patch.
 
 	// main and stuff
 	public static void main(String[] args) {
@@ -67,9 +88,7 @@ public class PNGto4BPP {
 		final JFrame aboutFrame = new JFrame("About");
 		final Dimension d = new Dimension(600,382);
 		final Dimension d2 = new Dimension(600,600);
-		final JTextField imageName = new JTextField("");
-		final JTextField palName = new JTextField("");
-		final JTextField fileName = new JTextField("");
+		
 		final TextArea debugLog = new TextArea("Debug log:",0,0,TextArea.SCROLLBARS_VERTICAL_ONLY);
 		debugLog.setEditable(false);
 		// buttons
@@ -111,8 +130,8 @@ public class PNGto4BPP {
 		debugWrapper.add(expLog,BorderLayout.EAST);
 		debugFrame.add(debugLog);
 		debugFrame.add(debugWrapper,BorderLayout.SOUTH);
-		StringWriter debugLogging = new StringWriter();
-		PrintWriter debugWriter = new PrintWriter(debugLogging);
+		debugLogging = new StringWriter();
+		debugWriter = new PrintWriter(debugLogging);
 		debugLogging.write("Debug log:\n");
 		// menu 
 		final JMenuBar menu = new JMenuBar();
@@ -297,213 +316,412 @@ public class PNGto4BPP {
 		// run button
 		runBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				byte[] rando = new byte[16];
-				for (int i = 0; i < rando.length; i++) // initialize rando with -1 to prevent static in the trans areas
-					rando[i] = -1;
-				BufferedImage img;
-				BufferedImage imgRead;
-				byte[] pixels;
-				String imgName = imageName.getText();
-				String paletteName = palName.getText();
-				File imageFile = new File(imgName);
-				BufferedReader br;
-				int[] palette = null;
-				byte[] palData = null;
-				byte[][][] eightbyeight;
-				int palChoice = palOptions.getSelectedIndex(); // see which palette method we're using
-				boolean extensionERR = false; // let the program spit out all extension errors at once
-
-				// test image type
-				if (!testFileType(imgName,IMAGEEXTS)) {
-					JOptionPane.showMessageDialog(frame,
-							"Images must be of the following extensions:\n" + join(IMAGEEXTS,", "),
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					extensionERR = true;
-				}
-
-				// test palette type
-				if (!testFileType(paletteName,PALETTEEXTS) && (palChoice != 2)) {
-					JOptionPane.showMessageDialog(frame,
-							"Palettes must be of the following extensions:\n" + join(PALETTEEXTS,", "),
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					extensionERR = true;
-				}
-
-				// save location
-				String loc = fileName.getText();
-				boolean bamboozled = false;
-				boolean[] bamboozarino = new boolean[16];
-				if (loc.toLowerCase().matches("bamboozle:\\s*[0-9a-f]+")) {
-					bamboozled = true;
-					loc = loc.replace("bamboozle:","");
-					String HEX = "0123456789ABCDEF";
-					for (int i = 0; i < HEX.length(); i++) {
-						char a = HEX.charAt(i);
-						if (loc.indexOf(a) != -1)
-							bamboozarino[i] = true;
-					}
-
-					for (int i = 0; i < bamboozarino.length; i++)
-						if (bamboozarino[i])
-							rando[i] = (byte) i;
-					loc = "";
-				}
-
-				// default name
-				if (loc.equals("")) {
-					loc = imgName;
-					try {
-						loc = loc.substring(0,loc.lastIndexOf("."));
-					} catch(StringIndexOutOfBoundsException e) {
-						loc = "oops";
-					} finally {
-						// still add extension here so that the user isn't fooled into thinking they need this field
-						loc += " (" + (bamboozled ? "bamboozled" : "exported") + ").spr";
-					}
-				}
-
-				// only allow sprite files
-				if (!testFileType(loc,EXPORTEXTS)) {
-					JOptionPane.showMessageDialog(frame,
-							"Export location must be of the following extensions:\n" + join(EXPORTEXTS,", "),
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					extensionERR = true;
-				}
-
-				// break if any extension related errors
-				if (extensionERR) {
-					return;
-				}
-
-				// image file
-				try {
-					imgRead = ImageIO.read(imageFile);
-				} catch (FileNotFoundException e) {
-					JOptionPane.showMessageDialog(frame,
-							"Image file not found",
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					e.printStackTrace(debugWriter);
-					return;
-				} catch (IOException e) {
-					JOptionPane.showMessageDialog(frame,
-							"Error reading image",
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					e.printStackTrace(debugWriter);
-					return;
-				}
-
-				// convert to RGB colorspace
-				img = convertToABGR(imgRead);
-
-				// image raster
-				try {
-					pixels = getImageRaster(img);
-				} catch (BadDimensionsException e) {
-					JOptionPane.showMessageDialog(frame,
-							"Image dimensions must be 128x448",
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					e.printStackTrace(debugWriter);
-					return;
-				}
-
-				// round image raster
-				pixels = roundRaster(pixels);
-
-				// explicit ASCII palette
-				if (palChoice == 0) {
-					// get palette file
-					try {
-						br = getPaletteFile(paletteName);
-					} catch (FileNotFoundException e) {
-						JOptionPane.showMessageDialog(frame,
-								"Palette file not found",
-								"Oops",
-								JOptionPane.WARNING_MESSAGE);
-						e.printStackTrace(debugWriter);
-						return;
-					}
-					// palette parsing
-					try {
-						// test file type to determine format
-						if (testFileType(paletteName, "txt"))
-							palette = getPaletteColorsFromPaintNET(br);
-						else
-							palette = getPaletteColorsFromFile(br);
-						palette = roundPalette(palette);
-						palData = palDataFromArray(palette);
-					} catch (NumberFormatException|IOException e) {
-						JOptionPane.showMessageDialog(frame,
-								"Error reading palette",
-								"Oops",
-								JOptionPane.WARNING_MESSAGE);
-						e.printStackTrace(debugWriter);
-						return;
-					} catch (ShortPaletteException e) {
-						JOptionPane.showMessageDialog(frame,
-								"Unable to find 16 colors",
-								"Oops",
-								JOptionPane.WARNING_MESSAGE);
-						e.printStackTrace(debugWriter);
-						return;
-					}
-				}
-
-				// binary (YY-CHR) pal
-				// TODO: this
-				if (palChoice == 1) {
-					JOptionPane.showMessageDialog(frame,
-							"Binary .PAL file reading not available yet\nWatch this space :thinking:",
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					return;
-				}
-
-				// extract from last block
-				if (palChoice == 2) {
-					palette = palExtract(pixels);
-					palData = palDataFromArray(palette);
-				}
-
-				// make the file
-				try {
-					new File(loc);
-				} catch (NullPointerException e) {
-					JOptionPane.showMessageDialog(frame,
-							"Invalid file name",
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					e.printStackTrace(debugWriter);
-				}
-
-				// split bytes into blocks
-				eightbyeight = get8x8(pixels, palette);
-
-				byte[] SNESdata = exportPNG(eightbyeight, palData, rando);
-
-				// write data to SPR file
-				try {
-					writeSPR(SNESdata, loc);
-				} catch (IOException e) {
-					JOptionPane.showMessageDialog(frame,
-							"Error writing sprite",
-							"Oops",
-							JOptionPane.WARNING_MESSAGE);
-					e.printStackTrace(debugWriter);
-					return;
-				}
-
-				// success
-				JOptionPane.showMessageDialog(frame,
-						"Sprite file successfully written to " + (new File(loc).getName()),
-						"YAY",
-						JOptionPane.PLAIN_MESSAGE);
+				ConvertPngToSprite(false);	
 			}});
+
+
+		//If arguments are greater than 1, then we have the neccesary arguemnts to do command line processing.
+		if(args.length > 1)
+		{
+			//If we encountered no errors processing the arguments, then convert and end program.
+			if(ProcessArgs(args))
+			{
+				System.exit(0);
+			}
+			//Leave program open with the fields that succeeded in being set.
+			else
+			{
+				System.out.println("Failed to Process Arguments.");
+			}
+		}
+
+	}
+
+///Summary
+	///ProcessArgs checks if the arguments are valid, and if so, sets the TextFields and ComboBox with the values from the passed arguments.
+	///Returns True if arguments were processed successfuly. False if not. 
+	public static boolean ProcessArgs(String[] args)
+	{		
+		if(args.length < 2 || args.length > 5)
+			return false;
+		String imgSrc= "";
+		String palSrc = "";
+		String sprTarget = "";
+		String romTarget = "";
+		int palOption = -1;
+		boolean argumentErrorsFound = false;
+
+		for(int i = 0; i < args.length; i++)
+		{
+			//Tokenize arg
+			String[] tokens = args[i].split("=");
+			//System.out.println(tokens[0]);
+			
+			///imgSrc: Full Path for Image
+			///palOption: palFileOption [0:ASCII(.GPL|.PAL), 1:Binary(YY .PAL), 2:Extract from Last Block of PNG]
+			///palSrc:(Used if Option 0 or 1 selected) Full Path for Pal File.
+			///sprTarget: Name of Sprite that will be created.
+			if(tokens.length == 2)
+			{
+				switch(tokens[0])
+				{
+					case "imgSrc":
+						imgSrc = tokens[1];
+						imageName.setText(imgSrc);
+						break;
+					case "palOption":
+						if(IsInteger(tokens[i]))
+						{
+							palOption = Integer.parseInt(tokens[1]);
+
+							if(palOption >= 0 && palOption < palOptions.getItemCount())
+							{
+								palOptions.setSelectedIndex(palOption);
+							}
+							else
+							{
+								System.out.println("The palOption: " + palOption + " is out of range.");
+								argumentErrorsFound = true;
+							}
+						}
+						else{
+							System.out.println("The argument: " + tokens[1] + " is not a valid integer to specify the palette Option. 0: ASCII, 1:Binary, 2:Extract from Last Block of PNG");
+							argumentErrorsFound = true;
+						}
+						break;
+					case "palSrc":
+						palSrc = tokens[1];
+						palName.setText(palSrc);
+						break;
+					case "sprTarget":
+						sprTarget = tokens[1];
+						fileName.setText(sprTarget);
+						break;
+					case "romTarget":
+						romTarget = tokens[1];						
+						break;
+				}
+			}
+			else
+			{
+				System.out.println("The argument: " + args[i] + " is invalid.");
+				argumentErrorsFound = true;
+			}			
+		}//End of For Loops				
+
+		if(argumentErrorsFound)
+			return false;
+
+		//Ensure imgSrc exists
+		if(imgSrc == "")
+		{
+			System.out.println("No Source Image was specified or was not specified correctly.");
+			argumentErrorsFound = true;
+		}
+
+		//enters here if palMethod is between 1-3}
+		if(palSrc == "" && (palOption == 0 || palOption == 1))
+		{
+			System.out.println("No palette Source was specified despite using a palette method that requires it.");
+			argumentErrorsFound = true;
+		}
+		
+		//If sprite target name is not set, use the img source name with .spr extension.
+		if(sprTarget == "")
+		{
+			sprTarget = ChangeExtension(imgSrc, "spr");
+			fileName.setText(sprTarget);
+		}
+					
+		
+		//If all arguments check out, lets finish everything we want to do.
+		if(!argumentErrorsFound)
+		{
+			//Returns true if successful
+			if(ConvertPngToSprite(true))
+			{
+				
+				if(romTarget != "")
+				{
+					try {
+						//Push change to ROM
+						UpdateRom(sprTarget, romTarget);
+					} catch (IOException e) {
+						System.out.println("ERROR: " + e);
+						return false;
+					}
+
+				}
+			}
+		}
+		return !argumentErrorsFound;
+	}
+
+	public static void UpdateRom(String sprTarget, String romTarget) throws IOException, FileNotFoundException
+	{
+		byte[] rom_patch;
+		byte[] sprite_data = new byte[0x7078];
+		
+		//filestream open .spr file
+		FileInputStream fsInput = new FileInputStream(sprTarget);
+		fsInput.read(sprite_data);
+		fsInput.close();
+		
+		//Acquire rom data.
+		fsInput = new FileInputStream(romTarget);
+		rom_patch = new byte[(int)fsInput.getChannel().size()];
+		fsInput.read(rom_patch);
+		fsInput.getChannel().position(0);
+		fsInput.close();
+
+		//filestream save .spr file to rom
+		FileOutputStream fsOut = new FileOutputStream(romTarget);
+
+		for(int i = 0;i<0x7000;i++)
+		{
+			rom_patch[0x80000 + i] = sprite_data[i];
+		}
+		for (int i = 0; i < 0x78; i++)
+		{
+			rom_patch[0x0DD308 + i] = sprite_data[i+0x7000];
+		}
+		fsOut.write(rom_patch, 0, rom_patch.length);
+
+		fsOut.close();
+	}
+
+	public static boolean IsInteger(String string) {
+		try {
+			Integer.valueOf(string);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
+	public static String ChangeExtension(String file, String extension) {
+		String filename = file;
+
+		if (filename.contains(".")) {
+			filename = filename.substring(0, filename.lastIndexOf('.'));
+		}
+		filename += "." + extension;
+
+		return filename;
+	}
+
+	public static boolean ConvertPngToSprite(boolean ignoreSuccessMessage)
+	{
+		byte[] rando = new byte[16];
+		for (int i = 0; i < rando.length; i++) // initialize rando with -1 to prevent static in the trans areas
+			rando[i] = -1;
+		BufferedImage img;
+		BufferedImage imgRead;
+		byte[] pixels;
+		String imgName = imageName.getText();
+		String paletteName = palName.getText();
+		File imageFile = new File(imgName);
+		BufferedReader br;
+		int[] palette = null;
+		byte[] palData = null;
+		byte[][][] eightbyeight;
+		int palChoice = palOptions.getSelectedIndex(); // see which palette method we're using
+		boolean extensionERR = false; // let the program spit out all extension errors at once
+
+		// test image type
+		if (!testFileType(imgName,IMAGEEXTS)) {
+			JOptionPane.showMessageDialog(frame,
+					"Images must be of the following extensions:\n" + join(IMAGEEXTS,", "),
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			extensionERR = true;
+		}
+
+		// test palette type
+		if (!testFileType(paletteName,PALETTEEXTS) && (palChoice != 2)) {
+			JOptionPane.showMessageDialog(frame,
+					"Palettes must be of the following extensions:\n" + join(PALETTEEXTS,", "),
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			extensionERR = true;
+		}
+
+		// save location
+		String loc = fileName.getText();
+		boolean bamboozled = false;
+		boolean[] bamboozarino = new boolean[16];
+		if (loc.toLowerCase().matches("bamboozle:\\s*[0-9a-f]+")) {
+			bamboozled = true;
+			loc = loc.replace("bamboozle:","");
+			String HEX = "0123456789ABCDEF";
+			for (int i = 0; i < HEX.length(); i++) {
+				char a = HEX.charAt(i);
+				if (loc.indexOf(a) != -1)
+					bamboozarino[i] = true;
+			}
+
+			for (int i = 0; i < bamboozarino.length; i++)
+				if (bamboozarino[i])
+					rando[i] = (byte) i;
+			loc = "";
+		}
+
+		// default name
+		if (loc.equals("")) {
+			loc = imgName;
+			try {
+				loc = loc.substring(0,loc.lastIndexOf("."));
+			} catch(StringIndexOutOfBoundsException e) {
+				loc = "oops";
+			} finally {
+				// still add extension here so that the user isn't fooled into thinking they need this field
+				loc += " (" + (bamboozled ? "bamboozled" : "exported") + ").spr";
+			}
+		}
+
+		// only allow sprite files
+		if (!testFileType(loc,EXPORTEXTS)) {
+			JOptionPane.showMessageDialog(frame,
+					"Export location must be of the following extensions:\n" + join(EXPORTEXTS,", "),
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			extensionERR = true;
+		}
+
+		// break if any extension related errors
+		if (extensionERR) {
+			return false;
+		}
+
+		// image file
+		try {
+			imgRead = ImageIO.read(imageFile);
+		} catch (FileNotFoundException e) {
+			JOptionPane.showMessageDialog(frame,
+					"Image file not found",
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			e.printStackTrace(debugWriter);
+			return false;
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(frame,
+					"Error reading image",
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			e.printStackTrace(debugWriter);
+			return false;
+		}
+
+		// convert to RGB colorspace
+		img = convertToABGR(imgRead);
+
+		// image raster
+		try {
+			pixels = getImageRaster(img);
+		} catch (BadDimensionsException e) {
+			JOptionPane.showMessageDialog(frame,
+					"Image dimensions must be 128x448",
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			e.printStackTrace(debugWriter);
+			return false;
+		}
+
+		// round image raster
+		pixels = roundRaster(pixels);
+
+		// explicit ASCII palette
+		if (palChoice == 0) {
+			// get palette file
+			try {
+				br = getPaletteFile(paletteName);
+			} catch (FileNotFoundException e) {
+				JOptionPane.showMessageDialog(frame,
+						"Palette file not found",
+						"Oops",
+						JOptionPane.WARNING_MESSAGE);
+				e.printStackTrace(debugWriter);
+				return false;
+			}
+			// palette parsing
+			try {
+				// test file type to determine format
+				if (testFileType(paletteName, "txt"))
+					palette = getPaletteColorsFromPaintNET(br);
+				else
+					palette = getPaletteColorsFromFile(br);
+				palette = roundPalette(palette);
+				palData = palDataFromArray(palette);
+			} catch (NumberFormatException|IOException e) {
+				JOptionPane.showMessageDialog(frame,
+						"Error reading palette",
+						"Oops",
+						JOptionPane.WARNING_MESSAGE);
+				e.printStackTrace(debugWriter);
+				return false;
+			} catch (ShortPaletteException e) {
+				JOptionPane.showMessageDialog(frame,
+						"Unable to find 16 colors",
+						"Oops",
+						JOptionPane.WARNING_MESSAGE);
+				e.printStackTrace(debugWriter);
+				return false;
+			}
+		}
+
+		// binary (YY-CHR) pal
+		// TODO: this
+		if (palChoice == 1) {
+			JOptionPane.showMessageDialog(frame,
+					"Binary .PAL file reading not available yet\nWatch this space :thinking:",
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			return false;
+		}
+
+		// extract from last block
+		if (palChoice == 2) {
+			palette = palExtract(pixels);
+			palData = palDataFromArray(palette);
+		}
+
+		// make the file
+		try {
+			new File(loc);
+		} catch (NullPointerException e) {
+			JOptionPane.showMessageDialog(frame,
+					"Invalid file name",
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			e.printStackTrace(debugWriter);
+		}
+
+		// split bytes into blocks
+		eightbyeight = get8x8(pixels, palette);
+
+		byte[] SNESdata = exportPNG(eightbyeight, palData, rando);
+
+		// write data to SPR file
+		try {
+			writeSPR(SNESdata, loc);
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(frame,
+					"Error writing sprite",
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			e.printStackTrace(debugWriter);
+			return false;
+		}
+
+		if(!ignoreSuccessMessage)
+		{
+			// success
+			JOptionPane.showMessageDialog(frame,
+				"Sprite file successfully written to " + (new File(loc).getName()),
+				"YAY",
+				JOptionPane.PLAIN_MESSAGE);
+		}		
+		return true;
 	}
 
 	/**
