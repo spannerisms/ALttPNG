@@ -37,13 +37,34 @@ public class SpriteFilter {
 			{4,2},{4,3},{5,2},{5,3},{6,2},{6,3},{7,2},{7,3}
 	};
 	static final String[][] FILTERS = {
-			{ "Static", "Flag accepts HEX values (0-F) of which indices to randomize; defaults to 1-F" },
-			{ "Index swap", null },
-			{ "Line shift", null },
-			{ "Palette shift", "Flag accepts an integer number (decimal) of spaces to shift each index; defaults to 5"},
-			{ "Row swap", null },
-			{ "Y-Squish", null },
-			{ "X-Squish", null },
+			{ "Static",
+				"Randomizes pixels of specific indices.",
+				"Flag accepts HEX values (0-F) of which indices to randomize; defaults to 1-F." },
+			{ "Index swap",
+				"Swaps pixel indices to the other end of the palette, ignoring transparent colors"
+					+ "; e.g. 0x1 with 0xF, 0x2 with 0xE, etc.",
+				null },
+			{ "Line shift",
+				"Shifts even rows to the right and odd rows to the left by 1 pixel.",
+				null },
+			{ "Palette shift",
+				"Shifts all pixels a specific number of palette indices to the right.",
+				"Flag accepts an integer number (decimal) of spaces to shift each index; defaults to 5"},
+			{ "Row swap",
+				"Swaps even rows with odd rows.",
+				null },
+			{ "Column swap",
+				"Swaps even columns with odd columns.",
+				null },
+			{ "Buzz swap",
+				"Swaps both even and odd rows and columns, simultaneously.",
+				null },
+			{ "X-Squish",
+				"Squishes sprite horizontally.",
+				null },
+			{ "Y-Squish",
+				"Squishes sprite vertically.",
+				null },
 			};
 	public static void main(String[] args) throws IOException {
 		final JFrame frame = new JFrame("Sprite filtering");
@@ -67,7 +88,6 @@ public class SpriteFilter {
 		final JPanel goBtnWrap = new JPanel(new BorderLayout());
 		final JPanel bothWrap = new JPanel(new BorderLayout());
 		final JTextPane flagTextInfo = new JTextPane();
-		flagTextInfo.setText(FILTERS[0][1]);
 		flagTextInfo.setEditable(false);
 		flagTextInfo.setBackground(null);
 		flagTextInfo.setHighlighter(null);
@@ -89,7 +109,6 @@ public class SpriteFilter {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
 		frame.setLocation(200,200);
-		frame.setVisible(true);
 		
 		// file explorer
 		final JFileChooser explorer = new JFileChooser();
@@ -98,10 +117,12 @@ public class SpriteFilter {
 		final File EEE = new File("");
 		options.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				String flagText = FILTERS[options.getSelectedIndex()][1];
+				int option = options.getSelectedIndex();
+				String filterText = FILTERS[option][1];
+				String flagText = FILTERS[option][2];
 				if (flagText == null)
 					flagText = "No flag options available for this filter.";
-				flagTextInfo.setText(flagText);
+				flagTextInfo.setText(filterText + "\n" + flagText);
 			}});
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -155,6 +176,11 @@ public class SpriteFilter {
 						"YAY",
 						JOptionPane.PLAIN_MESSAGE);
 			}});
+		
+		// random crap to fire an event to update text
+		options.getActionListeners()[0].actionPerformed(
+				new ActionEvent(options, ActionEvent.ACTION_PERFORMED,"",0,0));
+		frame.setVisible(true);
 	}
 	
 	/**
@@ -248,10 +274,19 @@ public class SpriteFilter {
 			case 3 :
 				ret = palShiftFilter(ret, f);
 				break;
+			case 4 :
+				ret = rowSwapFilter(ret);
+				break;
 			case 5 :
-				ret = squishFilter(ret);
+				ret = columnSwapFilter(ret);
 				break;
 			case 6 :
+				ret = buzzSwapFilter(ret);
+				break;
+			case 7 :
+				ret = squishFilter(ret);
+				break;
+			case 8 :
 				ret = squashFilter(ret);
 				break;
 		}
@@ -344,18 +379,71 @@ public class SpriteFilter {
 	}
 	
 	/**
-	 * Squish vertically
+	 * Swap even and odd rows
 	 * @param img
 	 */
-	public static byte[][][] squishFilter(byte[][][] img) {
-		byte[][] copy;
+	public static byte[][][] rowSwapFilter(byte[][][] img) {
+		byte[][] copy = new byte[8][8];
 		for (int i = 0; i < img.length; i++) {
-			copy = img[i].clone();
-			for (int j = 0; j < img[0].length; j++)
+			// copy array, .clone() is stupid
+			for (int i2 = 0; i2 < copy.length; i2++) {
+				for (int j2 = 0; j2 < copy.length; j2++)
+					copy[i2][j2] = img[i][i2][j2];
+			}
+
+			for (int j = 0; j < img[0].length; j++) {
+				int dir = (j%2) == 0 ? 1 : -1;
 				for (int k = 0; k < img[0][0].length; k++) {
-					int dir = (j%2) == 0 ? 1 : -1;
 					img[i][j][k] = copy[j+dir][k];
-				}	
+				}
+			}
+		}
+		return img;
+	}
+	
+	/**
+	 * Swap even and odd columns
+	 * @param img
+	 */
+	public static byte[][][] columnSwapFilter(byte[][][] img) {
+		byte[][] copy = new byte[8][8];
+		for (int i = 0; i < img.length; i++) {
+			// copy array, .clone() is stupid
+			for (int i2 = 0; i2 < copy.length; i2++) {
+				for (int j2 = 0; j2 < copy.length; j2++)
+					copy[i2][j2] = img[i][i2][j2];
+			}
+
+			for (int j = 0; j < img[0].length; j++) {
+				for (int k = 0; k < img[0][0].length; k++) {
+					int dir = (k%2) == 0 ? 1 : -1;
+					img[i][j][k] = copy[j][k+dir];
+				}
+			}
+		}
+		return img;
+	}
+	
+	/**
+	 * Swap even and odd rows and columns
+	 * @param img
+	 */
+	public static byte[][][] buzzSwapFilter(byte[][][] img) {
+		byte[][] copy = new byte[8][8];
+		for (int i = 0; i < img.length; i++) {
+			// copy array, .clone() is stupid
+			for (int i2 = 0; i2 < copy.length; i2++) {
+				for (int j2 = 0; j2 < copy.length; j2++)
+					copy[i2][j2] = img[i][i2][j2];
+			}
+
+			for (int j = 0; j < img[0].length; j++) {
+				int dir =  (j%2) == 0 ? 1 : -1;
+				for (int k = 0; k < img[0][0].length; k++) {
+					int dir2 = (k%2) == 0 ? 1 : -1;
+					img[i][j][k] = copy[j+dir][k+dir2];
+				}
+			}
 		}
 		return img;
 	}
@@ -364,18 +452,33 @@ public class SpriteFilter {
 	 * Squish horizontally
 	 * @param img
 	 */
-	public static byte[][][] squashFilter(byte[][][] img) {
-		byte[][] copy;
+	public static byte[][][] squishFilter(byte[][][] img) {
 		for (int i = 0; i < img.length; i++) {
-			copy = img[i].clone();
 			for (int j = 0; j < img[0].length; j++)
 				for (int k = 0; k < img[0][0].length; k++) {
 					int dir = (k%2) == 0 ? 1 : -1;
-					img[i][j][k] = copy[j][k+dir];
+					img[i][j][k] = img[i][j][k+dir];
 				}	
 		}
 		return img;
 	}
+
+	/**
+	 * Squish vertically
+	 * @param img
+	 */
+	public static byte[][][] squashFilter(byte[][][] img) {
+		for (int i = 0; i < img.length; i++) {
+			for (int j = 0; j < img[0].length; j++) {
+				int dir = (j%2) == 0 ? 1 : -1;
+				for (int k = 0; k < img[0][0].length; k++) {
+					img[i][j][k] = img[i][j+dir][k];
+				}	
+			}
+		}
+		return img;
+	}
+	
 	/**
 	 * Converts an index map into a proper 4BPP (SNES) byte map.
 	 * @param eightbyeight - color index map
