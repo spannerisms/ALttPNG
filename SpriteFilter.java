@@ -24,6 +24,34 @@ public class SpriteFilter {
 	public static byte[][][] sprTo8x8(byte[] sprite) {
 		byte[][][] ret = new byte[896][8][8];
 		
+		// current block we're working on, each sized 32
+		// start at -1 since we're incrementing at 0mod32
+		int b = -1;
+		// locate where in interlacing map we're reading from
+		int g;
+		for (int i = 0; i < sprite.length; i++) {
+			// find interlacing index
+			g = i%32;
+			// increment at 0th index
+			if (g == 0)
+				b++;
+			// row to look at
+			int r = BPPI[g][0];
+			// bit plane of byte
+			int p = BPPI[g][1];
+			
+			// byte to unravel
+			byte q = sprite[i];
+			
+			// run through the byte
+			for (int x = 0; x < 8; x++) {
+				// AND with 1 shifted to the correct plane
+				boolean bitOn = (q & (1 << (7-x))) == 1;
+				// if true, OR with that plane in index map
+				if (bitOn)
+					ret[b][r][x] |= (1 << (3-p));
+			}
+		}
 		return ret;
 	}
 	
