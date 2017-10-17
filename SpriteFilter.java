@@ -39,7 +39,8 @@ public class SpriteFilter {
 	static final String[][] FILTERS = {
 			{ "Static",
 				"Randomizes pixels of specific indices.",
-				"Flag accepts HEX values (0-F) of which indices to randomize; defaults to 1-F." },
+				"Flag accepts HEX values (0-F) of which indices to randomize; defaults to 1-F.\n" +
+				"Prefix with '-' to inverse selection."},
 			{ "Index swap",
 				"Swaps pixel indices to the other end of the palette, ignoring transparent colors"
 					+ "; e.g. 0x1 with 0xF, 0x2 with 0xE, etc.",
@@ -308,18 +309,31 @@ public class SpriteFilter {
 	 * @param img
 	 */
 	public static byte[][][] staticFilter(byte[][][] img, String f) {
+		// default
+		if (f.equals("")) {
+			f = "-0";
+		}
+		// check if we're inversed
+		boolean inversed = false;
+		try {
+			inversed = f.charAt(0) == '-';
+		} catch (Exception e) {
+			// do nothing
+		}
 		// clear all non HEX values
 		f = f.toUpperCase();
 		f = f.replaceAll("[^0-9A-F]", "");
 
 		// default to all but trans pixel
-		if (f.equals(""))
-			f = "123456789ABCDEF";
 		// find which hex numbers exist in flags
 		boolean[] randomize = new boolean[16];
 		for (int i = 0; i < HEX.length(); i++)
 			if (f.indexOf(HEX.charAt(i)) != -1)
 				randomize[i] = true;
+		if (inversed)
+			for (int i = 0; i < randomize.length; i++)
+				randomize[i] = !randomize[i];
+
 		for (int i = 0; i < img.length; i++)
 			for (int j = 0; j < img[0].length; j++)
 				for (int k = 0; k < img[0][0].length; k++) {
