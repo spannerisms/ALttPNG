@@ -22,12 +22,12 @@ public class SpriteFilter {
 	// to spit out errors
 	public SpriteFilter() {}
 	static final SpriteFilter controller = new SpriteFilter();
-	
+
 	static final int SPRITESIZE = 896 * 32; // invariable lengths
 	static final int PALETTESIZE = 0x78; // not simplified to understand the numbers
-	
+
 	static final String HEX = "0123456789ABCDEF"; // HEX values
-	
+
 	// format of snes 4bpp {row (r), bit plane (b)}
 	// bit plane 0 indexed such that 1011 corresponds to 0123
 	static final int BPPI[][] = {
@@ -74,7 +74,7 @@ public class SpriteFilter {
 		final JButton fileNameBtn = new JButton("SPR file");
 		final JButton goBtn = new JButton("Apply");
 		final JLabel optlbl = new JLabel("   Flag and filter   ");
-		
+
 		String[] filterNames = new String[FILTERS.length];
 		for (int i = 0; i < filterNames.length; i++)
 			filterNames[i] = FILTERS[i][0];
@@ -109,7 +109,7 @@ public class SpriteFilter {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
 		frame.setLocation(200,200);
-		
+
 		// file explorer
 		final JFileChooser explorer = new JFileChooser();
 		// can't clear text due to wonky code
@@ -153,12 +153,12 @@ public class SpriteFilter {
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
-				
+
 				int filterToken = options.getSelectedIndex();
 				byte[][][] eightXeight = sprTo8x8(curSprite);
 				eightXeight = filter(eightXeight,filterToken, flags.getText());
 				byte[] palette = getPalette(curSprite);
-				
+
 				byte[] fullMap = exportPNG(eightXeight,palette);
 				String exportedName = fileN.substring(0,fileN.lastIndexOf('.')) +
 						" (" + FILTERS[filterToken][0].toLowerCase() + ").spr";
@@ -176,16 +176,16 @@ public class SpriteFilter {
 						"YAY",
 						JOptionPane.PLAIN_MESSAGE);
 			}});
-		
+
 		// random crap to fire an event to update text
 		options.getActionListeners()[0].actionPerformed(
 				new ActionEvent(options, ActionEvent.ACTION_PERFORMED,"",0,0));
 		frame.setVisible(true);
 	}
-	
+
 	/**
 	 * Reads a sprite file
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public static byte[] readSprite(String path) throws IOException {
 		File file = new File(path);
@@ -202,7 +202,7 @@ public class SpriteFilter {
 		} catch (IOException e) {
 			throw e;
 		}
-		
+
 		return ret;
 	}
 	/**
@@ -211,7 +211,7 @@ public class SpriteFilter {
 	 */
 	public static byte[][][] sprTo8x8(byte[] sprite) {
 		byte[][][] ret = new byte[896][8][8];
-		
+
 		// current block we're working on, each sized 32
 		// start at -1 since we're incrementing at 0mod32
 		int b = -1;
@@ -227,7 +227,7 @@ public class SpriteFilter {
 			int r = BPPI[g][0];
 			// bit plane of byte
 			int p = BPPI[g][1];
-			
+
 			// byte to unravel
 			byte q = sprite[i];
 
@@ -242,7 +242,7 @@ public class SpriteFilter {
 		}
 		return ret;
 	}
-	
+
 	/**
 	 * Read palette from last set of data
 	 */
@@ -253,6 +253,15 @@ public class SpriteFilter {
 			pal[i] = sprite[offset+i];
 		return pal;
 	}
+
+	/*
+	 * 
+	 * 
+	 * Start of filters
+	 * 
+	 * 
+	 * 
+	 */
 	/**
 	 * Apply a filter based on a token.
 	 * @param img - image map to screw up
@@ -290,10 +299,10 @@ public class SpriteFilter {
 				ret = squashFilter(ret);
 				break;
 		}
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * Randomizes all desired pixels.
 	 * @param img
@@ -302,7 +311,7 @@ public class SpriteFilter {
 		// clear all non HEX values
 		f = f.toUpperCase();
 		f = f.replaceAll("[^0-9A-F]", "");
-		
+
 		// default to all but trans pixel
 		if (f.equals(""))
 			f = "123456789ABCDEF";
@@ -355,7 +364,7 @@ public class SpriteFilter {
 				}
 		return img;
 	}
-	
+
 	/**
 	 * Shifts all non transparent indices an integer value to the right, wrapping around;
 	 * defaults to 5.
@@ -377,7 +386,7 @@ public class SpriteFilter {
 				}
 		return img;
 	}
-	
+
 	/**
 	 * Swap even and odd rows
 	 * @param img
@@ -400,7 +409,7 @@ public class SpriteFilter {
 		}
 		return img;
 	}
-	
+
 	/**
 	 * Swap even and odd columns
 	 * @param img
@@ -423,7 +432,7 @@ public class SpriteFilter {
 		}
 		return img;
 	}
-	
+
 	/**
 	 * Swap even and odd rows and columns
 	 * @param img
@@ -447,7 +456,7 @@ public class SpriteFilter {
 		}
 		return img;
 	}
-	
+
 	/**
 	 * Squish horizontally
 	 * @param img
@@ -458,7 +467,7 @@ public class SpriteFilter {
 				for (int k = 0; k < img[0][0].length; k++) {
 					int dir = (k%2) == 0 ? 1 : -1;
 					img[i][j][k] = img[i][j][k+dir];
-				}	
+				}
 		}
 		return img;
 	}
@@ -473,12 +482,21 @@ public class SpriteFilter {
 				int dir = (j%2) == 0 ? 1 : -1;
 				for (int k = 0; k < img[0][0].length; k++) {
 					img[i][j][k] = img[i][j+dir][k];
-				}	
+				}
 			}
 		}
 		return img;
 	}
-	
+
+	/*
+	 * 
+	 * 
+	 * End of filters
+	 * 
+	 * 
+	 * 
+	 */
+
 	/**
 	 * Converts an index map into a proper 4BPP (SNES) byte map.
 	 * @param eightbyeight - color index map
@@ -534,7 +552,7 @@ public class SpriteFilter {
 		}
 		return bytemap;
 	}
-	
+
 	/**
 	 * Writes the image to an <tt>.spr</tt> file.
 	 * @param map - SNES 4BPP file, including 5:5:5
@@ -594,21 +612,5 @@ public class SpriteFilter {
 	 */
 	public static boolean testFileType(String s, String type) {
 		return testFileType(s, new String[] { type });
-	}
-
-	/**
-	 * Join array of strings together with a delimiter.
-	 * @param s - array of strings
-	 * @param c - delimiter
-	 * @return A single <tt>String</tt>.
-	 */
-	public static String join(String[] s, String c) {
-		String ret = "";
-		for (int i = 0; i < s.length; i++) {
-			ret += s[i];
-			if (i != s.length-1)
-				ret += c;
-		}
-		return ret;
 	}
 }
