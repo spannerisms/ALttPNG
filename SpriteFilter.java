@@ -33,7 +33,10 @@ public class SpriteFilter {
 			{0,2},{0,3},{1,2},{1,3},{2,2},{2,3},{3,2},{3,3},
 			{4,2},{4,3},{5,2},{5,3},{6,2},{6,3},{7,2},{7,3}
 	};
-	
+	static final String[] FILTERS = {
+			"Static",
+			"Index swap"
+			};
 	public static void main(String[] args) throws IOException {
 		final JFrame frame = new JFrame("Sprite filtering");
 		final Dimension d = new Dimension(600,382);
@@ -42,11 +45,7 @@ public class SpriteFilter {
 		final JButton goBtn = new JButton("Apply");
 		FileNameExtensionFilter sprFilter =
 				new FileNameExtensionFilter("Sprite files", new String[] { "spr" });
-		String[] filterChoices = {
-				"Static",
-				"Index swap"
-				};
-		final JComboBox<String> options = new JComboBox<String>(filterChoices);
+		final JComboBox<String> options = new JComboBox<String>(FILTERS);
 		final JPanel frame2 = new JPanel(new BorderLayout());
 		final JPanel imgWrap = new JPanel(new BorderLayout());
 		final JPanel filtWrap = new JPanel(new BorderLayout());
@@ -110,7 +109,7 @@ public class SpriteFilter {
 				
 				byte[] fullMap = exportPNG(eightXeight,palette);
 				String exportedName = fileN.substring(0,fileN.lastIndexOf('.')) +
-						" (" + filterChoices[filterToken] + ").spr";
+						" (" + FILTERS[filterToken].toLowerCase() + ").spr";
 				try {
 					writeSPR(fullMap,exportedName);
 				} catch (IOException e) {
@@ -174,7 +173,7 @@ public class SpriteFilter {
 			
 			// byte to unravel
 			byte q = sprite[i];
-			System.out.println(r + " " + p);
+
 			// run through the byte
 			for (int c = 0; c < 8; c++) {
 				// AND with 1 shifted to the correct plane
@@ -193,10 +192,8 @@ public class SpriteFilter {
 	public static byte[] getPalette(byte[] sprite) {
 		byte[] pal = new byte[PALETTESIZE];
 		int offset = SPRITESIZE;
-		for (int i = 0; i < PALETTESIZE; i++) {
+		for (int i = 0; i < PALETTESIZE; i++)
 			pal[i] = sprite[offset+i];
-			System.out.println(pal[i]);
-		}
 		return pal;
 	}
 	/**
