@@ -36,7 +36,8 @@ public class SpriteFilter {
 	static final String[] FILTERS = {
 			"Static",
 			"Index swap",
-			"Alt Shift"
+			"Line shift",
+			"Palette shift"
 			};
 	public static void main(String[] args) throws IOException {
 		final JFrame frame = new JFrame("Sprite filtering");
@@ -72,7 +73,7 @@ public class SpriteFilter {
 		// can't clear text due to wonky code
 		// have to set a blank file instead
 		final File EEE = new File("");
-		
+		String flag = "";
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
@@ -105,7 +106,7 @@ public class SpriteFilter {
 				
 				int filterToken = options.getSelectedIndex();
 				byte[][][] eightXeight = sprTo8x8(curSprite);
-				eightXeight = filter(eightXeight,filterToken);
+				eightXeight = filter(eightXeight,filterToken, flag);
 				byte[] palette = getPalette(curSprite);
 				
 				byte[] fullMap = exportPNG(eightXeight,palette);
@@ -201,18 +202,22 @@ public class SpriteFilter {
 	 * Apply a filter based on a token.
 	 * @param img - image map to screw up
 	 * @param c - filter token
+	 * @param f - flag
 	 */
-	public static byte[][][] filter(byte[][][] img, int c) {
+	public static byte[][][] filter(byte[][][] img, int c, String f) {
 		byte[][][] ret = img.clone();
 		switch(c) {
 			case 0 :
-				ret = staticFilter(ret);
+				ret = staticFilter(ret, f);
 				break;
 			case 1 :
 				ret = swapFilter(ret);
 				break;
 			case 2 :
-				ret = shiftFilter(ret);
+				ret = lineShiftFilter(ret);
+				break;
+			case 3 :
+				ret = palShiftFilter(ret, f);
 				break;
 		}
 		
@@ -223,7 +228,7 @@ public class SpriteFilter {
 	 * Randomizes all non-trans pixels.
 	 * @param img
 	 */
-	public static byte[][][] staticFilter(byte[][][] img) {
+	public static byte[][][] staticFilter(byte[][][] img, String f) {
 		for (int i = 0; i < img.length; i++)
 			for (int j = 0; j < img[0].length; j++)
 				for (int k = 0; k < img[0][0].length; k++) {
@@ -250,7 +255,7 @@ public class SpriteFilter {
 	/**
 	 * Shifts rows by 1 to the left or right, alternating
 	 */
-	public static byte[][][] shiftFilter(byte[][][] img) {
+	public static byte[][][] lineShiftFilter(byte[][][] img) {
 		for (int i = 0; i < img.length; i++)
 			for (int j = 0; j < img[0].length; j++)
 				for (int k = 0; k < img[0][0].length; k++) {
@@ -265,6 +270,16 @@ public class SpriteFilter {
 						else
 							img[i][j][k] = 0;
 					}
+				}
+		return img;
+	}
+	
+	public static byte[][][] palShiftFilter(byte[][][] img, String f) {
+		for (int i = 0; i < img.length; i++)
+			for (int j = 0; j < img[0].length; j++)
+				for (int k = 0; k < img[0][0].length; k++) {
+					if (img[i][j][k] != 0)
+						img[i][j][k] = (byte) ((img[i][j][k] + 5) % 16);
 				}
 		return img;
 	}
