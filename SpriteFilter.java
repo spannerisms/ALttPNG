@@ -28,6 +28,8 @@ public class SpriteFilter {
 	static final int SPRITESIZE = 896 * 32; // invariable lengths
 	static final int PALETTESIZE = 0x78; // not simplified to understand the numbers
 	
+	static final String HEX = "0123456789ABCDEF"; // HEX values
+	
 	// format of snes 4bpp {row (r), bit plane (b)}
 	// bit plane 0 indexed such that 1011 corresponds to 0123
 	static final int BPPI[][] = {
@@ -251,14 +253,26 @@ public class SpriteFilter {
 	}
 	
 	/**
-	 * Randomizes all non-trans pixels.
+	 * Randomizes all desired pixels.
 	 * @param img
 	 */
 	public static byte[][][] staticFilter(byte[][][] img, String f) {
+		// clear all non HEX values
+		f = f.toUpperCase();
+		f = f.replaceAll("[^0-9A-F]", "");
+		
+		// default to all but trans pixel
+		if (f.equals(""))
+			f = "123456789ABCDEF";
+		// find which hex numbers exist in flags
+		boolean[] randomize = new boolean[16];
+		for (int i = 0; i < HEX.length(); i++)
+			if (f.indexOf(HEX.charAt(i)) != -1)
+				randomize[i] = true;
 		for (int i = 0; i < img.length; i++)
 			for (int j = 0; j < img[0].length; j++)
 				for (int k = 0; k < img[0][0].length; k++) {
-					if (img[i][j][k] != 0)
+					if (randomize[img[i][j][k]] == true)
 						img[i][j][k] = (byte) (Math.random() * 16);
 				}
 		return img;
