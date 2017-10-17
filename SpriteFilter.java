@@ -33,14 +33,16 @@ public class SpriteFilter {
 	 * @param c - filter token
 	 */
 	public static byte[][][] filter(byte[][][] img, int c) {
-		byte[][][] ret = null;
+		byte[][][] ret = img.clone();
 		switch(c) {
 			case 0:
-				ret = staticFilter(img);
+				ret = staticFilter(ret);
 				break;
+			case 1:
+				ret = swapFilter(ret);
 		}
 		
-		return ret;
+		return img;
 	}
 	
 	/**
@@ -48,14 +50,27 @@ public class SpriteFilter {
 	 * @param img
 	 */
 	public static byte[][][] staticFilter(byte[][][] img) {
-		byte[][][] ret = img.clone();
-		for (int i = 0; i < ret.length; i++)
-			for (int j = 0; j < ret[0].length; j++)
-				for (int k = 0; k < ret[0][0].length; k++) {
-					if (ret[i][j][k] != 0)
-						ret[i][j][k] = (byte) (Math.random() * 16);
+		for (int i = 0; i < img.length; i++)
+			for (int j = 0; j < img[0].length; j++)
+				for (int k = 0; k < img[0][0].length; k++) {
+					if (img[i][j][k] != 0)
+						img[i][j][k] = (byte) (Math.random() * 16);
 				}
-		return ret;
+		return img;
+	}
+
+	/**
+	 * Swaps indices with the other end; e.g. 0x1 swapped with 0xF, 0x2 swapped with 0xE, etc.
+	 * Ignores trans pixels
+	 */
+	public static byte[][][] swapFilter(byte[][][] img) {
+		for (int i = 0; i < img.length; i++)
+			for (int j = 0; j < img[0].length; j++)
+				for (int k = 0; k < img[0][0].length; k++) {
+					if (img[i][j][k] != 0)
+						img[i][j][k] = (byte) (16 - img[i][j][k]);
+				}
+		return img;
 	}
 
 	/**
