@@ -4,6 +4,9 @@ public class SpriteFilter {
 	public SpriteFilter() {}
 	static final SpriteFilter controller = new SpriteFilter();
 	
+	static final int SPRITESIZE = 896 * 32; // invariable lengths
+	static final int PALETTESIZE = 0x78; // not simplified to understand the numbers
+	
 	// format of snes 4bpp {row (r), bit plane (b)}
 	// bit plane 0 indexed such that 1011 corresponds to 0123
 	static final int BPPI[][] = {
@@ -29,7 +32,7 @@ public class SpriteFilter {
 		int b = -1;
 		// locate where in interlacing map we're reading from
 		int g;
-		for (int i = 0; i < sprite.length; i++) {
+		for (int i = 0; i < SPRITESIZE; i++) {
 			// find interlacing index
 			g = i%32;
 			// increment at 0th index
@@ -55,6 +58,14 @@ public class SpriteFilter {
 		return ret;
 	}
 	
+	/**
+	 * Read palette from last set of data
+	 */
+	public static int[] getPalette(byte[] sprite) {
+		int[] pal = new int[64];
+		
+		return pal;
+	}
 	/**
 	 * Apply a filter based on a token.
 	 * @param img - image map to screw up
@@ -195,7 +206,7 @@ public class SpriteFilter {
 
 		// byte map
 		// includes the size of the sheet (896*32) + palette data (0x78)
-		byte[] bytemap = new byte[896*32+0x78];
+		byte[] bytemap = new byte[SPRITESIZE+PALETTESIZE];
 
 		int k = 0;
 		for (int i = 0; i < fourbpp.length; i++) {
@@ -213,7 +224,7 @@ public class SpriteFilter {
 		// end 4BPP
 
 		// add palette data, starting at end of sheet
-		int i = 896*32-2;
+		int i = SPRITESIZE-2;
 		for (byte b : palData) {
 			if (i == bytemap.length)
 				break;
