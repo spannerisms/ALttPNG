@@ -1,5 +1,7 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -7,7 +9,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -16,6 +17,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SpriteFilter {
@@ -34,11 +36,11 @@ public class SpriteFilter {
 			{0,2},{0,3},{1,2},{1,3},{2,2},{2,3},{3,2},{3,3},
 			{4,2},{4,3},{5,2},{5,3},{6,2},{6,3},{7,2},{7,3}
 	};
-	static final String[] FILTERS = {
-			"Static",
-			"Index swap",
-			"Line shift",
-			"Palette shift"
+	static final String[][] FILTERS = {
+			{ "Static", "Flag accepts HEX values (0-F) of which indices to randomize; Defaults to 1-F" },
+			{ "Index swap", null },
+			{ "Line shift", null },
+			{ "Palette shift", "Flag accepts an integer number of spaces to shift each color"}
 			};
 	public static void main(String[] args) throws IOException {
 		final JFrame frame = new JFrame("Sprite filtering");
@@ -48,26 +50,37 @@ public class SpriteFilter {
 		final JButton fileNameBtn = new JButton("SPR file");
 		final JButton goBtn = new JButton("Apply");
 		final JLabel optlbl = new JLabel("   Flag and filter   ");
+		
+		String[] filterNames = new String[FILTERS.length];
+		for (int i = 0; i < filterNames.length; i++)
+			filterNames[i] = FILTERS[i][0];
 		FileNameExtensionFilter sprFilter =
 				new FileNameExtensionFilter("Sprite files", new String[] { "spr" });
-		final JComboBox<String> options = new JComboBox<String>(FILTERS);
+		final JComboBox<String> options = new JComboBox<String>(filterNames);
 		final JPanel frame2 = new JPanel(new BorderLayout());
 		final JPanel imgWrap = new JPanel(new BorderLayout());
 		final JPanel filtWrap = new JPanel(new BorderLayout());
 		final JPanel goWrap = new JPanel(new BorderLayout());
+		final JPanel goBtnWrap = new JPanel(new BorderLayout());
 		final JPanel bothWrap = new JPanel(new BorderLayout());
+		final JTextPane flagTextInfo = new JTextPane();
+		flagTextInfo.setText(FILTERS[0][1]);
+		flagTextInfo.setEditable(false);
+		flagTextInfo.setBackground(null);
+		flagTextInfo.setHighlighter(null);
 		imgWrap.add(fileName,BorderLayout.CENTER);
 		imgWrap.add(fileNameBtn,BorderLayout.EAST);
 		goWrap.add(flags,BorderLayout.NORTH);
 		goWrap.add(options,BorderLayout.EAST);
 		goWrap.add(optlbl,BorderLayout.WEST);
-		filtWrap.add(goBtn,BorderLayout.CENTER);
-		filtWrap.add(goWrap,BorderLayout.EAST);
+		goWrap.add(flagTextInfo,BorderLayout.SOUTH);
+		goBtnWrap.add(goBtn, BorderLayout.NORTH);
+		frame2.add(flagTextInfo,BorderLayout.CENTER);
+		filtWrap.add(goBtnWrap,BorderLayout.CENTER);
+		filtWrap.add(goWrap,BorderLayout.WEST);
 		bothWrap.add(imgWrap,BorderLayout.NORTH);
 		bothWrap.add(filtWrap,BorderLayout.SOUTH);
 		frame2.add(bothWrap,BorderLayout.NORTH);
-		
-		
 		frame.add(frame2);
 		frame.setSize(d);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -80,7 +93,13 @@ public class SpriteFilter {
 		// can't clear text due to wonky code
 		// have to set a blank file instead
 		final File EEE = new File("");
-
+		options.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				String flagText = FILTERS[options.getSelectedIndex()][1];
+				if (flagText == null)
+					flagText = "No flag options available for this filter.";
+				flagTextInfo.setText(flagText);
+			}});
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
@@ -118,7 +137,7 @@ public class SpriteFilter {
 				
 				byte[] fullMap = exportPNG(eightXeight,palette);
 				String exportedName = fileN.substring(0,fileN.lastIndexOf('.')) +
-						" (" + FILTERS[filterToken].toLowerCase() + ").spr";
+						" (" + FILTERS[filterToken][0].toLowerCase() + ").spr";
 				try {
 					writeSPR(fullMap,exportedName);
 				} catch (IOException e) {
