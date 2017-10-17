@@ -28,9 +28,9 @@ public class SpriteFilter {
 	}
 	
 	/**
-	 * Apply a filter based on 
-	 * @param img
-	 * @param c
+	 * Apply a filter based on a token.
+	 * @param img - image map to screw up
+	 * @param c - filter token
 	 */
 	public static byte[][][] filter(byte[][][] img, int c) {
 		byte[][][] ret = null;
@@ -49,9 +49,15 @@ public class SpriteFilter {
 	 */
 	public static byte[][][] staticFilter(byte[][][] img) {
 		byte[][][] ret = img.clone();
-		
+		for (int i = 0; i < ret.length; i++)
+			for (int j = 0; j < ret[0].length; j++)
+				for (int k = 0; k < ret[0][0].length; k++) {
+					if (ret[i][j][k] != 0)
+						ret[i][j][k] = (byte) (Math.random() * 16);
+				}
 		return ret;
 	}
+
 	/**
 	 * Turn the image into an array of 8x8 blocks.
 	 * Assumes ABGR color space.
