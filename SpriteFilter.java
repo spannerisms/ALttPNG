@@ -35,7 +35,8 @@ public class SpriteFilter {
 	};
 	static final String[] FILTERS = {
 			"Static",
-			"Index swap"
+			"Index swap",
+			"Alt Shift"
 			};
 	public static void main(String[] args) throws IOException {
 		final JFrame frame = new JFrame("Sprite filtering");
@@ -204,14 +205,18 @@ public class SpriteFilter {
 	public static byte[][][] filter(byte[][][] img, int c) {
 		byte[][][] ret = img.clone();
 		switch(c) {
-			case 0:
+			case 0 :
 				ret = staticFilter(ret);
 				break;
-			case 1:
+			case 1 :
 				ret = swapFilter(ret);
+				break;
+			case 2 :
+				ret = shiftFilter(ret);
+				break;
 		}
 		
-		return img;
+		return ret;
 	}
 	
 	/**
@@ -242,6 +247,27 @@ public class SpriteFilter {
 		return img;
 	}
 
+	/**
+	 * Shifts rows by 1 to the left or right, alternating
+	 */
+	public static byte[][][] shiftFilter(byte[][][] img) {
+		for (int i = 0; i < img.length; i++)
+			for (int j = 0; j < img[0].length; j++)
+				for (int k = 0; k < img[0][0].length; k++) {
+					if (j % 2 == 0) {
+						if (k != 7)
+							img[i][j][7-k] = img[i][j][6-k];
+						else
+							img[i][j][7-k] = 0;
+					} else {
+						if (k != 7)
+							img[i][j][k] = img[i][j][k+1];
+						else
+							img[i][j][k] = 0;
+					}
+				}
+		return img;
+	}
 	/**
 	 * Converts an index map into a proper 4BPP (SNES) byte map.
 	 * @param eightbyeight - color index map
