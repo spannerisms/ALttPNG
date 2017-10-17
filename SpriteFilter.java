@@ -1,7 +1,5 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -42,7 +40,10 @@ public class SpriteFilter {
 			{ "Static", "Flag accepts HEX values (0-F) of which indices to randomize; defaults to 1-F" },
 			{ "Index swap", null },
 			{ "Line shift", null },
-			{ "Palette shift", "Flag accepts an integer number (decimal) of spaces to shift each index; defaults to 5"}
+			{ "Palette shift", "Flag accepts an integer number (decimal) of spaces to shift each index; defaults to 5"},
+			{ "Row swap", null },
+			{ "Y-Squish", null },
+			{ "X-Squish", null },
 			};
 	public static void main(String[] args) throws IOException {
 		final JFrame frame = new JFrame("Sprite filtering");
@@ -247,6 +248,12 @@ public class SpriteFilter {
 			case 3 :
 				ret = palShiftFilter(ret, f);
 				break;
+			case 5 :
+				ret = squishFilter(ret);
+				break;
+			case 6 :
+				ret = squashFilter(ret);
+				break;
 		}
 		
 		return ret;
@@ -333,6 +340,40 @@ public class SpriteFilter {
 					if (img[i][j][k] != 0)
 						img[i][j][k] = (byte) ((img[i][j][k] + wrap) % 16);
 				}
+		return img;
+	}
+	
+	/**
+	 * Squish vertically
+	 * @param img
+	 */
+	public static byte[][][] squishFilter(byte[][][] img) {
+		byte[][] copy;
+		for (int i = 0; i < img.length; i++) {
+			copy = img[i].clone();
+			for (int j = 0; j < img[0].length; j++)
+				for (int k = 0; k < img[0][0].length; k++) {
+					int dir = (j%2) == 0 ? 1 : -1;
+					img[i][j][k] = copy[j+dir][k];
+				}	
+		}
+		return img;
+	}
+	
+	/**
+	 * Squish horizontally
+	 * @param img
+	 */
+	public static byte[][][] squashFilter(byte[][][] img) {
+		byte[][] copy;
+		for (int i = 0; i < img.length; i++) {
+			copy = img[i].clone();
+			for (int j = 0; j < img[0].length; j++)
+				for (int k = 0; k < img[0][0].length; k++) {
+					int dir = (k%2) == 0 ? 1 : -1;
+					img[i][j][k] = copy[j][k+dir];
+				}	
+		}
 		return img;
 	}
 	/**
