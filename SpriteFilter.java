@@ -12,6 +12,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -43,19 +44,25 @@ public class SpriteFilter {
 		final JFrame frame = new JFrame("Sprite filtering");
 		final Dimension d = new Dimension(600,382);
 		final JTextField fileName = new JTextField("");
+		final JTextField flags = new JTextField();
 		final JButton fileNameBtn = new JButton("SPR file");
 		final JButton goBtn = new JButton("Apply");
+		final JLabel optlbl = new JLabel("   Flag and filter   ");
 		FileNameExtensionFilter sprFilter =
 				new FileNameExtensionFilter("Sprite files", new String[] { "spr" });
 		final JComboBox<String> options = new JComboBox<String>(FILTERS);
 		final JPanel frame2 = new JPanel(new BorderLayout());
 		final JPanel imgWrap = new JPanel(new BorderLayout());
 		final JPanel filtWrap = new JPanel(new BorderLayout());
+		final JPanel goWrap = new JPanel(new BorderLayout());
 		final JPanel bothWrap = new JPanel(new BorderLayout());
 		imgWrap.add(fileName,BorderLayout.CENTER);
 		imgWrap.add(fileNameBtn,BorderLayout.EAST);
-		filtWrap.add(options,BorderLayout.CENTER);
-		filtWrap.add(goBtn,BorderLayout.EAST);
+		goWrap.add(flags,BorderLayout.NORTH);
+		goWrap.add(options,BorderLayout.EAST);
+		goWrap.add(optlbl,BorderLayout.WEST);
+		filtWrap.add(goBtn,BorderLayout.CENTER);
+		filtWrap.add(goWrap,BorderLayout.EAST);
 		bothWrap.add(imgWrap,BorderLayout.NORTH);
 		bothWrap.add(filtWrap,BorderLayout.SOUTH);
 		frame2.add(bothWrap,BorderLayout.NORTH);
@@ -73,7 +80,7 @@ public class SpriteFilter {
 		// can't clear text due to wonky code
 		// have to set a blank file instead
 		final File EEE = new File("");
-		String flag = "";
+
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
@@ -106,7 +113,7 @@ public class SpriteFilter {
 				
 				int filterToken = options.getSelectedIndex();
 				byte[][][] eightXeight = sprTo8x8(curSprite);
-				eightXeight = filter(eightXeight,filterToken, flag);
+				eightXeight = filter(eightXeight,filterToken, flags.getText());
 				byte[] palette = getPalette(curSprite);
 				
 				byte[] fullMap = exportPNG(eightXeight,palette);
