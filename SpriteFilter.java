@@ -1,11 +1,21 @@
-import java.awt.image.DataBufferByte;
-import java.io.BufferedReader;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SpriteFilter {
 	// to spit out errors
@@ -25,7 +35,96 @@ public class SpriteFilter {
 	};
 	
 	public static void main(String[] args) throws IOException {
-
+		final JFrame frame = new JFrame("Sprite filtering");
+		final Dimension d = new Dimension(600,382);
+		final JTextField fileName = new JTextField("");
+		final JButton fileNameBtn = new JButton("SPR file");
+		final JButton goBtn = new JButton("Apply");
+		FileNameExtensionFilter sprFilter =
+				new FileNameExtensionFilter("Sprite files", new String[] { "spr" });
+		String[] filterChoices = {
+				"Static",
+				"Index swap"
+				};
+		final JComboBox<String> options = new JComboBox<String>(filterChoices);
+		final JPanel frame2 = new JPanel(new BorderLayout());
+		final JPanel imgWrap = new JPanel(new BorderLayout());
+		final JPanel filtWrap = new JPanel(new BorderLayout());
+		final JPanel bothWrap = new JPanel(new BorderLayout());
+		imgWrap.add(fileName,BorderLayout.CENTER);
+		imgWrap.add(fileNameBtn,BorderLayout.EAST);
+		filtWrap.add(options,BorderLayout.CENTER);
+		filtWrap.add(goBtn,BorderLayout.EAST);
+		bothWrap.add(imgWrap,BorderLayout.NORTH);
+		bothWrap.add(filtWrap,BorderLayout.SOUTH);
+		frame2.add(bothWrap,BorderLayout.NORTH);
+		
+		
+		frame.add(frame2);
+		frame.setSize(d);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setResizable(false);
+		frame.setLocation(200,200);
+		frame.setVisible(true);
+		
+		// file explorer
+		final JFileChooser explorer = new JFileChooser();
+		// can't clear text due to wonky code
+		// have to set a blank file instead
+		final File EEE = new File("");
+		
+		fileNameBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				explorer.setSelectedFile(EEE);
+				explorer.setFileFilter(sprFilter);
+				explorer.showOpenDialog(fileNameBtn);
+				String n = "";
+				try {
+					n = explorer.getSelectedFile().getPath();
+				} catch (NullPointerException e) {
+					// do nothing
+				} finally {
+					if (testFileType(n,"spr"))
+						fileName.setText(n);
+				}
+				explorer.removeChoosableFileFilter(sprFilter);
+			}});
+		goBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				String fileN = fileName.getText();
+				byte[] curSprite = null;
+				try {
+					curSprite = readSprite(fileN);
+				} catch (IOException e) {
+					JOptionPane.showMessageDialog(frame,
+							"Error reading sprite",
+							"Oops",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				
+				int filterToken = options.getSelectedIndex();
+				byte[][][] eightXeight = sprTo8x8(curSprite);
+				eightXeight = filter(eightXeight,filterToken);
+				byte[] palette = getPalette(curSprite);
+				
+				byte[] fullMap = exportPNG(eightXeight,palette);
+				String exportedName = fileN.substring(0,fileN.lastIndexOf('.')) +
+						" (" + filterChoices[filterToken] + ").spr";
+				try {
+					writeSPR(fullMap,exportedName);
+				} catch (IOException e) {
+					JOptionPane.showMessageDialog(frame,
+							"Error writing sprite",
+							"Oops",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				JOptionPane.showMessageDialog(frame,
+						"Sprite successfully filtered and written to:\n" + exportedName,
+						"YAY",
+						JOptionPane.PLAIN_MESSAGE);
+			}});
 	}
 	
 	/**
