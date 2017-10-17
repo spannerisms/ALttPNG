@@ -39,10 +39,10 @@ public class SpriteFilter {
 			{4,2},{4,3},{5,2},{5,3},{6,2},{6,3},{7,2},{7,3}
 	};
 	static final String[][] FILTERS = {
-			{ "Static", "Flag accepts HEX values (0-F) of which indices to randomize; Defaults to 1-F" },
+			{ "Static", "Flag accepts HEX values (0-F) of which indices to randomize; defaults to 1-F" },
 			{ "Index swap", null },
 			{ "Line shift", null },
-			{ "Palette shift", "Flag accepts an integer number of spaces to shift each color"}
+			{ "Palette shift", "Flag accepts an integer number (decimal) of spaces to shift each index; defaults to 5"}
 			};
 	public static void main(String[] args) throws IOException {
 		final JFrame frame = new JFrame("Sprite filtering");
@@ -314,12 +314,24 @@ public class SpriteFilter {
 		return img;
 	}
 	
+	/**
+	 * Shifts all non transparent indices an integer value to the right, wrapping around;
+	 * defaults to 5.
+	 * @param img
+	 * @param f
+	 */
 	public static byte[][][] palShiftFilter(byte[][][] img, String f) {
+		int wrap = 5;
+		try {
+			wrap = Integer.parseInt(f, 10);
+		} catch (NumberFormatException e) {
+			// do nothing
+		}
 		for (int i = 0; i < img.length; i++)
 			for (int j = 0; j < img[0].length; j++)
 				for (int k = 0; k < img[0][0].length; k++) {
 					if (img[i][j][k] != 0)
-						img[i][j][k] = (byte) ((img[i][j][k] + 5) % 16);
+						img[i][j][k] = (byte) ((img[i][j][k] + wrap) % 16);
 				}
 		return img;
 	}
