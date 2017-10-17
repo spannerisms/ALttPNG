@@ -1,3 +1,6 @@
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class SpriteFilter {
 	// to spit out errors
@@ -20,6 +23,9 @@ public class SpriteFilter {
 
 	}
 	
+	/**
+	 * 
+	 */
 	/**
 	 * Takes a sprite and turns it into 896 blocks of 8x8 pixels
 	 * @param sprite
@@ -47,12 +53,12 @@ public class SpriteFilter {
 			byte q = sprite[i];
 			
 			// run through the byte
-			for (int x = 0; x < 8; x++) {
+			for (int c = 0; c < 8; c++) {
 				// AND with 1 shifted to the correct plane
-				boolean bitOn = (q & (1 << (7-x))) == 1;
+				boolean bitOn = (q & (1 << (7-c))) == 1;
 				// if true, OR with that plane in index map
 				if (bitOn)
-					ret[b][r][x] |= (1 << (3-p));
+					ret[b][r][c] |= (1 << (3-p));
 			}
 		}
 		return ret;
@@ -61,7 +67,7 @@ public class SpriteFilter {
 	/**
 	 * Read palette from last set of data
 	 */
-	public static int[] getPalette(byte[] sprite) {
+	public static int[] getPalette(byte[] palette) {
 		int[] pal = new int[64];
 		
 		return pal;
@@ -232,5 +238,82 @@ public class SpriteFilter {
 			i++;
 		}
 		return bytemap;
+	}
+	
+	/**
+	 * Writes the image to an <tt>.spr</tt> file.
+	 * @param map - SNES 4BPP file, including 5:5:5
+	 * @param loc - File path of exported sprite
+	 */
+	public static void writeSPR(byte[] map, String loc) throws IOException {
+		// create a file at directory
+		new File(loc);
+
+		FileOutputStream fileOuputStream = new FileOutputStream(loc);
+		try {
+			fileOuputStream.write(map);
+		} finally {
+			fileOuputStream.close();
+		}
+	}
+	/*
+	 * GUI related functions
+	 */
+	/**
+	 * gives file extension name from a string
+	 * @param s - test case
+	 * @return extension type
+	 */
+	public static String getFileType(String s) {
+		String ret = s.substring(s.lastIndexOf(".") + 1);
+		return ret;
+	}
+
+	/**
+	 * Test a file against multiple extensions.
+	 * The way <b>getFileType</b> works should allow
+	 * both full paths and lone file types to work.
+	 * 
+	 * @param s - file name or extension
+	 * @param type - list of all extensions to test against
+	 * @return <tt>true</tt> if any extension is matched
+	 */
+	public static boolean testFileType(String s, String[] type) {
+		boolean ret = false;
+		String filesType = getFileType(s);
+		for (String t : type) {
+			if (filesType.equalsIgnoreCase(t)) {
+				ret = true;
+				break;
+			}
+		}
+		return ret;
+	}
+
+	/**
+	 * Test a file against a single extension.
+	 * 
+	 * @param s - file name or extension
+	 * @param type - extension
+	 * @return <tt>true</tt> if extension is matched
+	 */
+	public static boolean testFileType(String s, String type) {
+		return testFileType(s, new String[] { type });
+	}
+
+	/**
+	 * Join array of strings together with a delimiter.
+	 * @param s - array of strings
+	 * @param c - delimiter
+	 * @return A single <tt>String</tt>.
+	 */
+	public static String join(String[] s, String c) {
+		String ret = "";
+		for (int i = 0; i < s.length; i++) {
+			ret += s[i];
+			if (i != s.length-1)
+				ret += c;
+		}
+		return ret;
 	}
 }
