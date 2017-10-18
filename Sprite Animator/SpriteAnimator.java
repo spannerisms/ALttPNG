@@ -219,14 +219,58 @@ public class SpriteAnimator {
 	/**
 	 * Turn index map in 8x8 format into an array of ABGR values
 	 */
-	public static byte[] makeRaster(byte[][][] ebe, int[] palette) {
+	public static byte[] makeRaster(byte[][][] ebe, byte[][] palette) {
 		byte[] ret = new byte[RASTERSIZE];
-		
+		int largeCol = 0;
+		int intRow = 0;
+		int intCol = 0;
+		int index = 0;
+		byte[] color;
+		// read image
+		for (int i = 0; i < RASTERSIZE; i++) {
+			// get pixel color index
+			byte coli = ebe[index][intRow][intCol];
+			// get palette color
+			color = palette[coli];
+			// index 0 = trans
+			if (coli == 0)
+				ret[i*4] = 0;
+			else
+				ret[i*4] = (byte) 255;
+
+			// BGR
+			ret[i*4+1] = color[2];
+			ret[i*4+2] = color[1];
+			ret[i*4+3] = color[0];
+
+			// count up square by square
+			// at 8, reset the "Interior column" which we use to locate the pixel in 8x8
+			// increments the "Large column", which is the index of the 8x8 sprite on the sheet
+			// at 16, reset the index and move to the next row
+			// (so we can wrap around back to our old 8x8)
+			// after 8 rows, undo the index reset, and move on to the next super row
+			intCol++;
+			if (intCol == 8) {
+				index++;
+				largeCol++;
+				intCol = 0;
+				if (largeCol == 16) {
+					index -= 16;
+					largeCol = 0;
+					intRow++;
+					if (intRow == 8) {
+						index += 16;
+						intRow = 0;
+					}
+				}
+			}
+		}
 		return ret;
 	}
 	/**
-	 * Splits a palette into BGR arrays. Only uses the first 16 colors, and automatically makes first index black.
-	 * @return
+	 * Splits a palette into RGB arrays.
+	 * Only uses the first 16 colors.
+	 * Automatically makes first index black.
 	 */
 	public static byte[][] splitPal(int[] pal) {
 		byte[][] ret = new byte[16][3];
@@ -236,9 +280,9 @@ public class SpriteAnimator {
 			byte g = (byte) ((color % 1000000) / 1000);
 			byte b = (byte) (color % 1000);
 
-			ret[i][0] = b;
+			ret[i][0] = r;
 			ret[i][1] = g;
-			ret[i][2] = r;
+			ret[i][2] = b;
 		}
 
 		// make black;
