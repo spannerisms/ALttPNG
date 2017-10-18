@@ -1,4 +1,5 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,7 +17,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 public class SpriteFilter {
 	// to spit out errors
@@ -68,6 +72,29 @@ public class SpriteFilter {
 				null },
 			};
 	public static void main(String[] args) throws IOException {
+		// have to have this up here or nimbus overrides everything
+		// stupid nimbus
+		final JTextPane flagTextInfo = new JTextPane();
+		flagTextInfo.setEditable(false);
+		flagTextInfo.setHighlighter(null);
+		flagTextInfo.setBackground(new Color(214,217,223,255));
+
+		//try to set Nimbus
+		try {
+			NimbusLookAndFeel lookAndFeel = new NimbusLookAndFeel();
+			UIManager.setLookAndFeel(lookAndFeel);
+		} catch (UnsupportedLookAndFeelException e) {
+			// try to set System default
+			try {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (UnsupportedLookAndFeelException
+					| ClassNotFoundException
+					| InstantiationException
+					| IllegalAccessException e2) {
+					// do nothing
+			} //end System
+		} // end Nimbus
+
 		final JFrame frame = new JFrame("Sprite filtering");
 		final Dimension d = new Dimension(600,382);
 		final JTextField fileName = new JTextField("");
@@ -88,10 +115,7 @@ public class SpriteFilter {
 		final JPanel goWrap = new JPanel(new BorderLayout());
 		final JPanel goBtnWrap = new JPanel(new BorderLayout());
 		final JPanel bothWrap = new JPanel(new BorderLayout());
-		final JTextPane flagTextInfo = new JTextPane();
-		flagTextInfo.setEditable(false);
-		flagTextInfo.setBackground(null);
-		flagTextInfo.setHighlighter(null);
+
 		imgWrap.add(fileName,BorderLayout.CENTER);
 		imgWrap.add(fileNameBtn,BorderLayout.EAST);
 		goWrap.add(flags,BorderLayout.NORTH);
