@@ -1,3 +1,4 @@
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,6 +11,8 @@ import java.io.IOException;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -26,6 +29,8 @@ public class SpriteAnimator {
 	static final int RASTERSIZE = 128 * 448 * 4;
 	static final String HEX = "0123456789ABCDEF"; // HEX values
 
+	// our image
+	static BufferedImage img = null;
 	// format of snes 4bpp {row (r), bit plane (b)}
 	// bit plane 0 indexed such that 1011 corresponds to 0123
 	static final int BPPI[][] = {
@@ -188,6 +193,14 @@ public class SpriteAnimator {
 		final JTextField fileName = new JTextField("");
 		final JButton fileNameBtn = new JButton("SPR file");
 		final JButton loadBtn = new JButton("Load file");
+		final JPanel loadWrap = new JPanel(new BorderLayout());
+		final JPanel btnWrap = new JPanel(new BorderLayout());
+		btnWrap.add(fileNameBtn,BorderLayout.WEST);
+		btnWrap.add(loadBtn,BorderLayout.EAST);
+		loadWrap.add(btnWrap,BorderLayout.EAST);
+		loadWrap.add(fileName,BorderLayout.CENTER);
+		
+		frame.add(loadWrap,BorderLayout.NORTH);
 		frame.setSize(d);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
@@ -200,6 +213,8 @@ public class SpriteAnimator {
 		// can't clear text due to wonky code
 		// have to set a blank file instead
 		final File EEE = new File("");
+		
+		// load sprite file
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
@@ -215,6 +230,35 @@ public class SpriteAnimator {
 						fileName.setText(n);
 				}
 				explorer.removeChoosableFileFilter(sprFilter);
+			}});
+		
+		// turn sprite into png
+		loadBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				byte[] sprite;
+				try {
+					sprite = readSprite(fileName.getText());
+				} catch (IOException e1) {
+					JOptionPane.showMessageDialog(frame,
+							"Error reading sprite",
+							"Oops",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+
+				try {
+					byte[][][] ebe = sprTo8x8(sprite);
+					byte[][] palette = splitPal(new int[16]);
+					byte[] src = makeRaster(ebe,palette);
+					
+					img = makeSheet(src);
+				} catch(Exception e) {
+					JOptionPane.showMessageDialog(frame,
+							"Error converting sprite",
+							"Oops",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
 			}});
 		frame.setVisible(true);
 	}
