@@ -1,5 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -9,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -19,18 +22,16 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
-public class SpriteAnimator {
+public class SpriteAnimator extends JPanel {
+	private static final long serialVersionUID = 2114886855236406900L;
 
 	public SpriteAnimator() {}
-	static final SpriteAnimator controller = new SpriteAnimator();
 
 	static final int SPRITESIZE = 896 * 32; // invariable lengths
 	static final int PALETTESIZE = 0x78; // not simplified to understand the numbers
 	static final int RASTERSIZE = 128 * 448 * 4;
-	static final String HEX = "0123456789ABCDEF"; // HEX values
 
-	// our image
-	static BufferedImage img = null;
+	static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZαβ";
 	// format of snes 4bpp {row (r), bit plane (b)}
 	// bit plane 0 indexed such that 1011 corresponds to 0123
 	static final int BPPI[][] = {
@@ -39,12 +40,13 @@ public class SpriteAnimator {
 			{0,2},{0,3},{1,2},{1,3},{2,2},{2,3},{3,2},{3,3},
 			{4,2},{4,3},{5,2},{5,3},{6,2},{6,3},{7,2},{7,3}
 	};
+
 	/* taken and modified from
 	 * http://alttp.mymm1.com/sprites/includes/animations.txt
 	 * credit: mike trethewey
 	 */
 	static final String[] ANIMNAMES = {
-		"sta*nd", "standUp", "standDown", "walk", "walkUp", "walkDown", "bonk", "bonkUp", "bonkDown",
+		"stand", "standUp", "standDown", "walk", "walkUp", "walkDown", "bonk", "bonkUp", "bonkDown",
 		"swim", "swimUp", "swimDown", "swimFlap", "treadingWater", "treadingWaterUp", "treadingWaterDown",
 		"attack", "attackUp", "attackDown", "dashRelease", "dashReleaseUp", "dashReleaseDown",
 		"spinAttack", "spinAttackLeft", "spinAttackUp", "spinAttackDown",
@@ -171,6 +173,26 @@ public class SpriteAnimator {
 			{ { { 0, 96, 16, 16, 0, 0, 0 }, { 48, 48, 16, 16, 0, 0, 0 } } },
 			{ { { 64, 48, 16, 16, 0, 0, 0 }, { 48, 48, 16, 16, 0, 0, 0 } } }
 	};
+	
+	/*
+	 * GUI stuff
+	 */
+	private static final JComboBox<String> options = new JComboBox<String>(ANIMNAMES);
+
+	static final SpriteAnimator controller = new SpriteAnimator();
+
+	/*
+	 * Image controller
+	 */
+	private BufferedImage img = null; // sprite sheet
+	private int anime = 0; // animation id
+	public void setImage(BufferedImage i) {
+		img = i;
+	}
+
+	public void setAnimation(int i) {
+		anime = i;
+	}
 	public static void main(String[] args) throws IOException {
 		//try to set Nimbus
 		try {
@@ -195,11 +217,22 @@ public class SpriteAnimator {
 		final JButton loadBtn = new JButton("Load file");
 		final JPanel loadWrap = new JPanel(new BorderLayout());
 		final JPanel btnWrap = new JPanel(new BorderLayout());
+		final JPanel controls = new JPanel(new BorderLayout());
+		controls.add(options,BorderLayout.NORTH);
+		final JPanel bottomStuff = new JPanel(new BorderLayout());
+		
+		final SpriteAnimator imageArea = new SpriteAnimator();
+		final SpriteAnimator run = imageArea; // just a shorter name
+		imageArea.setPreferredSize(d);
+		bottomStuff.add(imageArea,BorderLayout.CENTER);
+		bottomStuff.add(controls,BorderLayout.EAST);
+		
 		btnWrap.add(fileNameBtn,BorderLayout.WEST);
 		btnWrap.add(loadBtn,BorderLayout.EAST);
 		loadWrap.add(btnWrap,BorderLayout.EAST);
 		loadWrap.add(fileName,BorderLayout.CENTER);
 		
+		frame.add(bottomStuff, BorderLayout.CENTER);
 		frame.add(loadWrap,BorderLayout.NORTH);
 		frame.setSize(d);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -251,7 +284,7 @@ public class SpriteAnimator {
 					byte[][] palette = splitPal(new int[16]);
 					byte[] src = makeRaster(ebe,palette);
 					
-					img = makeSheet(src);
+					run.setImage(makeSheet(src));
 				} catch(Exception e) {
 					JOptionPane.showMessageDialog(frame,
 							"Error converting sprite",
@@ -260,6 +293,14 @@ public class SpriteAnimator {
 					return;
 				}
 			}});
+		
+		// 
+		options.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				run.setAnimation(options.getSelectedIndex());
+			}});
+		
+		// turn on
 		frame.setVisible(true);
 	}
 	/**
@@ -420,6 +461,13 @@ public class SpriteAnimator {
 		image.setRGB(0, 0, 128, 448, rgb, 0, 128);
 		
 		return image;
+	}
+	/*
+	 * Draw controls
+	 */
+	public void paint(Graphics g) {
+		Graphics2D g2 = (Graphics2D) g;
+		g2.drawImage(img, 0, 0, null);
 	}
 	/*
 	 * GUI related functions
