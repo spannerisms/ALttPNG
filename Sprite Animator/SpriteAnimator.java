@@ -25,8 +25,6 @@ import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 public class SpriteAnimator extends JPanel {
 	private static final long serialVersionUID = 2114886855236406900L;
 
-	public SpriteAnimator() {}
-
 	static final int SPRITESIZE = 896 * 32; // invariable lengths
 	static final int PALETTESIZE = 0x78; // not simplified to understand the numbers
 	static final int RASTERSIZE = 128 * 448 * 4;
@@ -177,22 +175,174 @@ public class SpriteAnimator extends JPanel {
 	/*
 	 * GUI stuff
 	 */
-	private static final JComboBox<String> options = new JComboBox<String>(ANIMNAMES);
+	private static final JComboBox<String> animOptions = new JComboBox<String>(ANIMNAMES);
 
-	static final SpriteAnimator controller = new SpriteAnimator();
+	static final String[] MODES = {
+			"Normal play",
+			"Step-by-step",
+			"All frames"
+	};
 
+	private static final JComboBox<String> modeOptions = new JComboBox<String>(MODES);
 	/*
 	 * Image controller
 	 */
 	private BufferedImage img = null; // sprite sheet
-	private int anime = 0; // animation id
-	public void setImage(BufferedImage i) {
-		img = i;
+	private int anime; // animation id
+	private int speed; // speed; 0 = normal; positive = faster; negative = slower
+	private int mode; // animation mode
+	private int frame;
+	private int maxFrame;
+	private boolean running;
+	private static final int MAXSPEED = 6; // maximum speed magnitude
+	// default initialization
+	public SpriteAnimator() {
+		anime = 0;
+		speed = 0;
+		mode = 0;
+		frame = 0;
+		maxFrame = 0;
+		running = false;
 	}
 
-	public void setAnimation(int i) {
-		anime = i;
+	/**
+	 * Set image to animate.
+	 * @param image
+	 */
+	public void setImage(BufferedImage image) {
+		img = image;
 	}
+
+	/**
+	 * Set animation ID.
+	 * @param id
+	 */
+	public void setAnimation(int id) {
+		anime = id;
+	}
+	
+	/**
+	 * Get animation mode ID#.
+	 */
+	public int getMode() {
+		return mode;
+	}
+
+	/**
+	 * Set animation mode and reset.
+	 * @param m
+	 */
+	public void setMode(int m) {
+		mode = m;
+		reset();
+	}
+	
+	/**
+	 * Step forward 1 animation frame.
+	 * Resets frame to 0 if we reach the end in modes that loop.
+	 * Stops running if we reach the end of the animation in "All frames" mode.
+	 * @return Frame # painted
+	 */
+	public int step() {
+		int ret = frame;
+		frame++;
+		if (frame == maxFrame) {
+			frame = 0;
+			if (mode == 2)
+				setRunning(false);
+		}
+		// TODO : this
+		// paint();
+		return ret;
+	}
+
+	/**
+	 * Reset based on mode.
+	 */
+	public void reset() {
+		switch (mode) {
+			case 0 :
+				resetFrame();
+				resetSpeed();
+				setRunning(true);
+				break;
+			case 1 :
+				resetFrame();
+				setRunning(false);
+				break;
+			case 2 :
+				resetFrame();
+				resetSpeed();
+				setRunning(true);
+				break;
+		}
+	}
+	
+	/**
+	 * Reset speed to 0.
+	 */
+	public void resetSpeed() {
+		speed = 0;
+	}
+	
+	/**
+	 * Resets frame to 0.
+	 */
+	public void resetFrame() {
+		frame = 0;
+	}
+	
+	/**
+	 * Control self-animation permission.
+	 */
+	public void setRunning(boolean r) {
+		running = r;
+	}
+	
+	/**
+	 * Increments step speed by 1.
+	 * @return <b>true</b> if speed reaches max.
+	 */
+	public boolean faster() {
+		if (speed < MAXSPEED)
+			speed++;
+		return atMaxSpeed();
+	}
+	
+	/**
+	 * Decrements step speed by 1.
+	 * @return <b>true</b> if speed reaches min.
+	 */
+	public boolean slower() {
+		if (speed > (MAXSPEED * -1))
+			speed--;
+		return atMinSpeed();
+	}
+	/**
+	 * Compares current step speed to maximum speed allowed.
+	 */
+	public boolean atMaxSpeed() {
+		return speed == MAXSPEED;
+	}
+	/**
+	 * Compares current step speed to minimum speed allowed.
+	 */
+	public boolean atMinSpeed() {
+		return speed == (-1 * MAXSPEED);
+	}
+	/**
+	 * Set image mode.
+	 * <ul style="list-style:none">
+	 * <li><b>0</b> - normal animation</li>
+	 * <li><b>1</b> - step-by-step</li>
+	 * <li><b>2</b> - all frames</li>
+	 * </ul>
+	 * @param m - mode 
+	 */
+
+	// error controller
+	static final SpriteAnimator controller = new SpriteAnimator();
+	
 	public static void main(String[] args) throws IOException {
 		//try to set Nimbus
 		try {
@@ -215,12 +365,28 @@ public class SpriteAnimator extends JPanel {
 		final JTextField fileName = new JTextField("");
 		final JButton fileNameBtn = new JButton("SPR file");
 		final JButton loadBtn = new JButton("Load file");
+		final JButton stepBtn = new JButton("Step");
+		final JButton fasterBtn = new JButton("Speed+");
+		final JButton slowerBtn = new JButton("Speed-");
+		final JButton resetBtn = new JButton("Reset");
 		final JPanel loadWrap = new JPanel(new BorderLayout());
 		final JPanel btnWrap = new JPanel(new BorderLayout());
 		final JPanel controls = new JPanel(new BorderLayout());
-		controls.add(options,BorderLayout.NORTH);
-		final JPanel bottomStuff = new JPanel(new BorderLayout());
+		final JPanel controls1 = new JPanel(new BorderLayout());
+		final JPanel controls2 = new JPanel(new BorderLayout());
+		controls1.add(animOptions,BorderLayout.NORTH);
+		controls1.add(modeOptions,BorderLayout.SOUTH);
 		
+		controls2.add(stepBtn,BorderLayout.SOUTH);
+		controls2.add(fasterBtn,BorderLayout.EAST);
+		controls2.add(slowerBtn,BorderLayout.WEST);
+		controls2.add(resetBtn,BorderLayout.CENTER);
+		controls.add(controls1,BorderLayout.NORTH);
+		controls.add(controls2,BorderLayout.SOUTH);
+
+		final JPanel bottomStuff = new JPanel(new BorderLayout());
+		stepBtn.setEnabled(false);
+
 		final SpriteAnimator imageArea = new SpriteAnimator();
 		final SpriteAnimator run = imageArea; // just a shorter name
 		imageArea.setPreferredSize(d);
@@ -246,7 +412,7 @@ public class SpriteAnimator extends JPanel {
 		// can't clear text due to wonky code
 		// have to set a blank file instead
 		final File EEE = new File("");
-		
+
 		// load sprite file
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -295,11 +461,71 @@ public class SpriteAnimator extends JPanel {
 			}});
 		
 		// 
-		options.addActionListener(new ActionListener() {
+		animOptions.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				run.setAnimation(options.getSelectedIndex());
+				run.setAnimation(animOptions.getSelectedIndex());
 			}});
 		
+		modeOptions.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				run.setMode(modeOptions.getSelectedIndex());
+				int animMode = run.getMode();
+				// button disabling
+				switch(animMode) {
+				case 0 :
+					fasterBtn.setEnabled(true);
+					slowerBtn.setEnabled(true);
+					resetBtn.setEnabled(true);
+					stepBtn.setEnabled(false);
+					break;
+				case 1 :
+					fasterBtn.setEnabled(false);
+					slowerBtn.setEnabled(false);
+					resetBtn.setEnabled(true);
+					stepBtn.setEnabled(true);
+					break;
+				case 2 :
+					fasterBtn.setEnabled(false);
+					slowerBtn.setEnabled(false);
+					resetBtn.setEnabled(true);
+					stepBtn.setEnabled(false);
+					break;
+				}
+				run.reset();
+			}});
+		
+		fasterBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				slowerBtn.setEnabled(true);
+				if (run.faster())
+					fasterBtn.setEnabled(false);
+			}});
+		
+		slowerBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				fasterBtn.setEnabled(true);
+				if (run.slower())
+					slowerBtn.setEnabled(false);
+			}});
+		
+		resetBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int animMode = run.getMode();
+				run.reset();
+				// button disabling
+				switch (animMode) {
+					case 0 :
+						fasterBtn.setEnabled(true);
+						slowerBtn.setEnabled(true);
+						break;
+					case 1 :
+						// nothing
+						break;
+					case 2 :
+						// nothing
+						break;
+				}
+			}});
 		// turn on
 		frame.setVisible(true);
 	}
