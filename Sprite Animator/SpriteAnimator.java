@@ -1,7 +1,6 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class SpriteAnimator {
@@ -11,7 +10,7 @@ public class SpriteAnimator {
 
 	static final int SPRITESIZE = 896 * 32; // invariable lengths
 	static final int PALETTESIZE = 0x78; // not simplified to understand the numbers
-
+	static final int RASTERSIZE = 128 * 448 * 4;
 	static final String HEX = "0123456789ABCDEF"; // HEX values
 
 	// format of snes 4bpp {row (r), bit plane (b)}
@@ -216,6 +215,41 @@ public class SpriteAnimator {
 		}
 		return ret;
 	}
+	
+	/**
+	 * Turn index map in 8x8 format into an array of ABGR values
+	 */
+	public static byte[] makeRaster(byte[][][] ebe, int[] palette) {
+		byte[] ret = new byte[RASTERSIZE];
+		
+		return ret;
+	}
+	/**
+	 * Splits a palette into BGR arrays. Only uses the first 16 colors, and automatically makes first index black.
+	 * @return
+	 */
+	public static byte[][] splitPal(int[] pal) {
+		byte[][] ret = new byte[16][3];
+		for (int i = 0; i < 16; i++) {
+			int color = pal[i];
+			byte r = (byte) (color / 1000000);
+			byte g = (byte) ((color % 1000000) / 1000);
+			byte b = (byte) (color % 1000);
+
+			ret[i][0] = b;
+			ret[i][1] = g;
+			ret[i][2] = r;
+		}
+
+		// make black;
+		// separate operation just in case I don't wanna change pal's values
+		ret[0][0] = 0;
+		ret[0][1] = 0;
+		ret[0][2] = 0;
+
+		return ret;
+	}
+
 	/*
 	 * GUI related functions
 	 */
