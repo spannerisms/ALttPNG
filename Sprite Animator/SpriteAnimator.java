@@ -1,17 +1,20 @@
-import java.awt.Transparency;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.ComponentColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 public class SpriteAnimator {
 
@@ -164,7 +167,56 @@ public class SpriteAnimator {
 			{ { { 64, 48, 16, 16, 0, 0, 0 }, { 48, 48, 16, 16, 0, 0, 0 } } }
 	};
 	public static void main(String[] args) throws IOException {
+		//try to set Nimbus
+		try {
+			NimbusLookAndFeel lookAndFeel = new NimbusLookAndFeel();
+			UIManager.setLookAndFeel(lookAndFeel);
+		} catch (UnsupportedLookAndFeelException e) {
+			// try to set System default
+			try {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (UnsupportedLookAndFeelException
+					| ClassNotFoundException
+					| InstantiationException
+					| IllegalAccessException e2) {
+					// do nothing
+			} //end System
+		} // end Nimbus
+		
+		final JFrame frame = new JFrame("Sprite animator");
+		final Dimension d = new Dimension(600,382);
+		final JTextField fileName = new JTextField("");
+		final JButton fileNameBtn = new JButton("SPR file");
+		final JButton loadBtn = new JButton("Load file");
+		frame.setSize(d);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setResizable(false);
+		frame.setLocation(200,200);
 
+		// file explorer
+		final JFileChooser explorer = new JFileChooser();
+		FileNameExtensionFilter sprFilter =
+				new FileNameExtensionFilter("Sprite files", new String[] { "spr" });
+		// can't clear text due to wonky code
+		// have to set a blank file instead
+		final File EEE = new File("");
+		fileNameBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				explorer.setSelectedFile(EEE);
+				explorer.setFileFilter(sprFilter);
+				explorer.showOpenDialog(fileNameBtn);
+				String n = "";
+				try {
+					n = explorer.getSelectedFile().getPath();
+				} catch (NullPointerException e) {
+					// do nothing
+				} finally {
+					if (testFileType(n,"spr"))
+						fileName.setText(n);
+				}
+				explorer.removeChoosableFileFilter(sprFilter);
+			}});
+		frame.setVisible(true);
 	}
 	/**
 	 * Reads a sprite file
