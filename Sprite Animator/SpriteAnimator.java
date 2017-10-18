@@ -1,7 +1,17 @@
+import java.awt.Transparency;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 public class SpriteAnimator {
 
@@ -153,7 +163,7 @@ public class SpriteAnimator {
 			{ { { 0, 96, 16, 16, 0, 0, 0 }, { 48, 48, 16, 16, 0, 0, 0 } } },
 			{ { { 64, 48, 16, 16, 0, 0, 0 }, { 48, 48, 16, 16, 0, 0, 0 } } }
 	};
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 
 	}
 	/**
@@ -178,6 +188,7 @@ public class SpriteAnimator {
 
 		return ret;
 	}
+
 	/**
 	 * Takes a sprite and turns it into 896 blocks of 8x8 pixels
 	 * @param sprite
@@ -217,6 +228,33 @@ public class SpriteAnimator {
 	}
 	
 	/**
+	 * Splits a palette into RGB arrays.
+	 * Only uses the first 16 colors.
+	 * Automatically makes first index black.
+	 */
+	public static byte[][] splitPal(int[] pal) {
+		byte[][] ret = new byte[16][3];
+		for (int i = 0; i < 16; i++) {
+			int color = pal[i];
+			byte r = (byte) (color / 1000000);
+			byte g = (byte) ((color % 1000000) / 1000);
+			byte b = (byte) (color % 1000);
+
+			ret[i][0] = r;
+			ret[i][1] = g;
+			ret[i][2] = b;
+		}
+
+		// make black;
+		// separate operation just in case I don't wanna change pal's values
+		ret[0][0] = 0;
+		ret[0][1] = 0;
+		ret[0][2] = 0;
+
+		return ret;
+	}
+
+	/**
 	 * Turn index map in 8x8 format into an array of ABGR values
 	 */
 	public static byte[] makeRaster(byte[][][] ebe, byte[][] palette) {
@@ -227,7 +265,7 @@ public class SpriteAnimator {
 		int index = 0;
 		byte[] color;
 		// read image
-		for (int i = 0; i < RASTERSIZE; i++) {
+		for (int i = 0; i < RASTERSIZE / 4; i++) {
 			// get pixel color index
 			byte coli = ebe[index][intRow][intCol];
 			// get palette color
@@ -267,33 +305,26 @@ public class SpriteAnimator {
 		}
 		return ret;
 	}
+
 	/**
-	 * Splits a palette into RGB arrays.
-	 * Only uses the first 16 colors.
-	 * Automatically makes first index black.
+	 * Turns a 4 byte raster {A,B,G,R} into an integer array and sets the image.
+	 * @param raster
+	 * @return
 	 */
-	public static byte[][] splitPal(int[] pal) {
-		byte[][] ret = new byte[16][3];
-		for (int i = 0; i < 16; i++) {
-			int color = pal[i];
-			byte r = (byte) (color / 1000000);
-			byte g = (byte) ((color % 1000000) / 1000);
-			byte b = (byte) (color % 1000);
-
-			ret[i][0] = r;
-			ret[i][1] = g;
-			ret[i][2] = b;
+	public static BufferedImage makeSheet(byte[] raster) {
+		BufferedImage image = new BufferedImage(128, 448, BufferedImage.TYPE_4BYTE_ABGR_PRE);
+		int[] rgb = new int[128 * 448];
+		for (int i = 0, j = 0; i < rgb.length; i++) {
+			int a = raster[j++] & 0xff;
+			int b = raster[j++] & 0xff;
+			int g = raster[j++] & 0xff;
+			int r = raster[j++] & 0xff;
+			rgb[i] = (a << 24) | (r << 16) | (g << 8) | b;
 		}
-
-		// make black;
-		// separate operation just in case I don't wanna change pal's values
-		ret[0][0] = 0;
-		ret[0][1] = 0;
-		ret[0][2] = 0;
-
-		return ret;
+		image.setRGB(0, 0, 128, 448, rgb, 0, 128);
+		
+		return image;
 	}
-
 	/*
 	 * GUI related functions
 	 */
