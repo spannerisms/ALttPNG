@@ -37,7 +37,7 @@ import java.io.FileInputStream;
 // class
 public class PNGto4BPP {
 	// to spit out errors
-	public PNGto4BPP() {}
+	public PNGto4BPP() {super();}
 	static final PNGto4BPP controller = new PNGto4BPP();
 	// accepted extensions
 	final static String[] IMAGEEXTS = { "png" };
@@ -49,7 +49,12 @@ public class PNGto4BPP {
 	static final JTextField imageName = new JTextField("");
 	static final JTextField palName = new JTextField("");
 	static final JTextField fileName = new JTextField("");
-	static String[] palChoices = {"Read an ASCII (.GPL/.PAL)","Binary (YY .PAL)","Extract from the last block of PNG"};
+// palette reading methods
+	static String[] palChoices = {
+				"Read ASCII (" + join(PALETTEEXTS,", ") +")",
+				"Binary (YY .PAL)",
+				"Extract from last block of PNG"
+				};
 	static final JComboBox<String> palOptions = new JComboBox<String>(palChoices);
 	static final JFrame frame = new JFrame("PNG to SNES 4BPP");
 
@@ -153,13 +158,7 @@ public class PNGto4BPP {
 				new FileNameExtensionFilter("text files", LOGEXTS);
 		
 		explorer.setAcceptAllFileFilterUsed(false);
-		// palette reading methods
-		String[] palChoices = {
-				"Read ASCII (" + join(PALETTEEXTS,", ") +")",
-				"Binary (YY .PAL)",
-				"Extract from last block of PNG"
-				};
-		final JComboBox<String> palOptions = new JComboBox<String>(palChoices);
+
 		final JPanel frame2 = new JPanel(new BorderLayout());
 		final JPanel imgPalWrapper = new JPanel(new BorderLayout());
 		final JPanel imgNWrapper = new JPanel(new BorderLayout());
