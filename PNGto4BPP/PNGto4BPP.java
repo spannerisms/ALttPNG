@@ -645,11 +645,20 @@ public class PNGto4BPP {
 		// binary (YY-CHR) pal
 		// TODO: this
 		if (palChoice == 1) {
-			JOptionPane.showMessageDialog(frame,
-					"Binary .PAL file reading not available yet\nWatch this space :thinking:",
-					"Oops",
-					JOptionPane.WARNING_MESSAGE);
-			return false;
+			if (!testFileType(paletteName, "pal")) {
+				JOptionPane.showMessageDialog(frame,
+						"Binary palette reading must by a .PAL file",
+						"Oops",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
+			try {
+				byte[] palX = readFile(paletteName);
+				palette = palFromBinary(palX);
+				palData = palDataFromArray(palette);
+			} catch(Exception e) {
+				return false;
+			}
 		}
 
 		// extract from last block
@@ -793,6 +802,24 @@ public class PNGto4BPP {
 		return ret;
 	}
 
+	public static byte[] readFile(String path) throws IOException {
+		File file = new File(path);
+		byte[] ret = new byte[(int) file.length()];
+		FileInputStream s;
+		try {
+			s = new FileInputStream(file);
+		} catch (FileNotFoundException e) {
+			throw e;
+		}
+		try {
+			s.read(ret);
+			s.close();
+		} catch (IOException e) {
+			throw e;
+		}
+
+		return ret;
+	}
 	/**
 	 * Reads a GIMP (<tt>.gpl</tt>) or Graphics Gale (<tt>.pal</tt>) palette file for colors.
 	 * <br><br>
@@ -1004,6 +1031,27 @@ public class PNGto4BPP {
 		return palRet.array();
 	}
 
+	public static int[] palFromBinary(byte[] pal) {
+		int[] ret = new int[64];
+		for (int i = 0; i < 64; i++) {
+			short color = 0;
+			int pos = (i * 2) + 4;
+			color = (short) unsignByte(pal[pos+1]);
+			color <<= 8;
+			color |= (short) unsignByte(pal[pos]);
+			
+			byte r = (byte) (((color >> 0) & 0x1F) << 3);
+			byte g= (byte) (((color >> 5) & 0x1F) << 3);
+			byte b = (byte) (((color >> 10) & 0x1F) << 3);
+
+			int r2 = unsignByte(r);
+			int g2 = unsignByte(g);
+			int b2 = unsignByte(b);
+			ret[i] = (r2 * 1000000) + (g2 * 1000) + b2;
+			System.out.println(ret[i]);
+		}
+		return ret;
+	}
 	/**
 	 * Turn the image into an array of 8x8 blocks.
 	 * Assumes ABGR color space.
@@ -1030,9 +1078,9 @@ public class PNGto4BPP {
 		for (int i = 0; i < dis; i++) {
 			// get each color and get rid of sign
 			// colors are stored as {A,B,G,R,A,B,G,R...}
-			int b = (pixels[i*4+1]+256)%256;
-			int g = (pixels[i*4+2]+256)%256;
-			int r = (pixels[i*4+3]+256)%256;
+			int b = unsignByte(pixels[i*4+1]);
+			int g = unsignByte(pixels[i*4+2]);
+			int r = unsignByte(pixels[i*4+3]);
 
 			// convert to 9 digits
 			int rgb = (1000000 * r) + (1000 * g) + b;
@@ -1166,6 +1214,10 @@ public class PNGto4BPP {
 		}
 	}
 
+	public static int unsignByte(byte b) {
+		int ret = ((b + 256) % 256);
+		return ret;
+	}
 	// errors
 
 	/**
