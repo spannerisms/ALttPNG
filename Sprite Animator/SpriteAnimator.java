@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -447,7 +448,7 @@ public class SpriteAnimator extends JPanel {
 
 				try {
 					byte[][][] ebe = sprTo8x8(sprite);
-					byte[][] palette = splitPal(new int[16]);
+					byte[][] palette = getPal(sprite);
 					byte[] src = makeRaster(ebe,palette);
 					
 					run.setImage(makeSheet(src));
@@ -511,6 +512,7 @@ public class SpriteAnimator extends JPanel {
 		resetBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				int animMode = run.getMode();
+				run.repaint();
 				run.reset();
 				// button disabling
 				switch (animMode) {
@@ -589,23 +591,21 @@ public class SpriteAnimator extends JPanel {
 		}
 		return ret;
 	}
-	
+
 	/**
 	 * Splits a palette into RGB arrays.
 	 * Only uses the first 16 colors.
 	 * Automatically makes first index black.
 	 */
-	public static byte[][] splitPal(int[] pal) {
+	public static byte[][] getPal(byte[] sprite) {
 		byte[][] ret = new byte[16][3];
 		for (int i = 0; i < 16; i++) {
-			int color = pal[i];
-			byte r = (byte) (color / 1000000);
-			byte g = (byte) ((color % 1000000) / 1000);
-			byte b = (byte) (color % 1000);
-
-			ret[i][0] = r;
-			ret[i][1] = g;
-			ret[i][2] = b;
+			short color = 0;
+			int pos = SPRITESIZE + (2 * i) -2;
+			color = (short) ((sprite[pos]) | sprite[pos+1] << 8);
+			ret[i][0] = (byte) (8 * (color & 0x1F));
+			ret[i][1] = (byte) (8 * ((color >> 5) & 0x1F));
+			ret[i][2] = (byte) (8 * ((color >> 10) & 0x1F));
 		}
 
 		// make black;
