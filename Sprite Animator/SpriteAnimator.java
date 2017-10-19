@@ -18,6 +18,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -195,7 +196,9 @@ public class SpriteAnimator extends Component {
 	private int frame;
 	private int maxFrame;
 	private boolean running;
-	private static final int MAXSPEED = 6; // maximum speed magnitude
+	private BufferedImage[] frames = null;
+	private Timer tick;
+	private static final int MAXSPEED = 5; // maximum speed magnitude
 	// default initialization
 	public SpriteAnimator() {
 		anime = 0;
@@ -203,7 +206,13 @@ public class SpriteAnimator extends Component {
 		mode = 0;
 		frame = 0;
 		maxFrame = 0;
-		running = false;
+		running = true;
+		tick = new Timer(100, new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (isRunning())
+					step();
+			}
+		});
 	}
 
 	/**
@@ -219,7 +228,12 @@ public class SpriteAnimator extends Component {
 	 * @param id
 	 */
 	public void setAnimation(int id) {
+		if (img == null)
+			return;
 		anime = id;
+		int[][][] frameData = FRAMES[anime];
+		makeAnimationFrames(frameData);
+		reset();
 	}
 	
 	/**
@@ -251,13 +265,12 @@ public class SpriteAnimator extends Component {
 	public int step() {
 		int ret = frame;
 		frame++;
-		if (frame == maxFrame) {
+		if (frame >= maxFrame) {
 			frame = 0;
 			if (mode == 2)
 				setRunning(false);
 		}
-		// TODO : this
-		// paint();
+		repaint();
 		return ret;
 	}
 
@@ -281,6 +294,7 @@ public class SpriteAnimator extends Component {
 				setRunning(true);
 				break;
 		}
+		tick.start();
 	}
 	
 	/**
@@ -304,6 +318,18 @@ public class SpriteAnimator extends Component {
 		running = r;
 	}
 	
+	/**
+	 * @return <b>true</b> if active.
+	 */
+	public boolean isRunning() {
+		return running;
+	}
+	/**
+	 * @return Timer object
+	 */
+	public Timer getTimer() {
+		return tick;
+	}
 	/**
 	 * Increments step speed by 1.
 	 * @return <b>true</b> if speed reaches max.
@@ -336,12 +362,26 @@ public class SpriteAnimator extends Component {
 		return speed == (-1 * MAXSPEED);
 	}
 
+	/**
+	 * Makes an array of Buffered images based on the frame data.
+	 */
+	public void makeAnimationFrames(int[][][] data) {
+		if (img == null)
+			return;
+		maxFrame = data.length;
+		frames = new BufferedImage[maxFrame];
+		for (int i = 0; i < maxFrame; i++) {
+			frames[i] = img.getSubimage(data[i][0][1], data[i][0][0], data[i][0][2], data[i][0][3]);
+		}
+	}
 	/*
 	 * Draw controls
 	 */
 	public void paint(Graphics g) {
+		if (frames==null || frames[frame] == null)
+			return;
 		Graphics2D g2 = (Graphics2D) g;
-		g2.drawImage(img, 0, 0, null);
+		g2.drawImage(frames[frame], 0, 0, null);
 	}
 
 	// error controller
@@ -393,7 +433,7 @@ public class SpriteAnimator extends Component {
 
 		final SpriteAnimator imageArea = new SpriteAnimator();
 		final SpriteAnimator run = imageArea; // just a shorter name
-
+		final Timer tock = run.getTimer();
 		bottomStuff.add(imageArea,BorderLayout.CENTER);
 		bottomStuff.add(controls,BorderLayout.EAST);
 		
@@ -603,7 +643,7 @@ public class SpriteAnimator extends Component {
 	public static byte[][] getPal(byte[] sprite) {
 		byte[][] ret = new byte[16][3];
 		for (int i = 0; i < 16; i++) {
-			short color = 0;
+			short color = 0x0;
 			int pos = SPRITESIZE + (i * 2) - 2;
 			color = sprite[pos+1];
 			color <<= 8;
