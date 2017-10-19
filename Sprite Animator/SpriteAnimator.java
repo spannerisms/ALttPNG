@@ -1,4 +1,5 @@
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -9,7 +10,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -23,7 +23,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
-public class SpriteAnimator extends JPanel {
+public class SpriteAnimator extends Component {
 	private static final long serialVersionUID = 2114886855236406900L;
 
 	static final int SPRITESIZE = 896 * 32; // invariable lengths
@@ -228,10 +228,14 @@ public class SpriteAnimator extends JPanel {
 	public int getMode() {
 		return mode;
 	}
-
 	/**
-	 * Set animation mode and reset.
-	 * @param m
+	 * Set image mode and reset.
+	 * <ul style="list-style:none">
+	 * <li><b>0</b> - normal animation</li>
+	 * <li><b>1</b> - step-by-step</li>
+	 * <li><b>2</b> - all frames</li>
+	 * </ul>
+	 * @param m - mode 
 	 */
 	public void setMode(int m) {
 		mode = m;
@@ -331,15 +335,14 @@ public class SpriteAnimator extends JPanel {
 	public boolean atMinSpeed() {
 		return speed == (-1 * MAXSPEED);
 	}
-	/**
-	 * Set image mode.
-	 * <ul style="list-style:none">
-	 * <li><b>0</b> - normal animation</li>
-	 * <li><b>1</b> - step-by-step</li>
-	 * <li><b>2</b> - all frames</li>
-	 * </ul>
-	 * @param m - mode 
+
+	/*
+	 * Draw controls
 	 */
+	public void paint(Graphics g) {
+		Graphics2D g2 = (Graphics2D) g;
+		g2.drawImage(img, 0, 0, null);
+	}
 
 	// error controller
 	static final SpriteAnimator controller = new SpriteAnimator();
@@ -362,7 +365,7 @@ public class SpriteAnimator extends JPanel {
 		} // end Nimbus
 		
 		final JFrame frame = new JFrame("Sprite animator");
-		final Dimension d = new Dimension(600,382);
+		final Dimension d = new Dimension(600,682);
 		final JTextField fileName = new JTextField("");
 		final JButton fileNameBtn = new JButton("SPR file");
 		final JButton loadBtn = new JButton("Load file");
@@ -390,7 +393,7 @@ public class SpriteAnimator extends JPanel {
 
 		final SpriteAnimator imageArea = new SpriteAnimator();
 		final SpriteAnimator run = imageArea; // just a shorter name
-		imageArea.setPreferredSize(d);
+
 		bottomStuff.add(imageArea,BorderLayout.CENTER);
 		bottomStuff.add(controls,BorderLayout.EAST);
 		
@@ -404,7 +407,7 @@ public class SpriteAnimator extends JPanel {
 		frame.setSize(d);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
-		frame.setLocation(200,200);
+		frame.setLocation(100,100);
 
 		// file explorer
 		final JFileChooser explorer = new JFileChooser();
@@ -601,18 +604,23 @@ public class SpriteAnimator extends JPanel {
 		byte[][] ret = new byte[16][3];
 		for (int i = 0; i < 16; i++) {
 			short color = 0;
-			int pos = SPRITESIZE + (2 * i) -2;
-			color = (short) ((sprite[pos]) | sprite[pos+1] << 8);
-			ret[i][0] = (byte) (8 * (color & 0x1F));
-			ret[i][1] = (byte) (8 * ((color >> 5) & 0x1F));
-			ret[i][2] = (byte) (8 * ((color >> 10) & 0x1F));
+			int pos = SPRITESIZE + (i * 2) - 2;
+			color = sprite[pos+1];
+			color <<= 8;
+			color |= sprite[pos];
+			
+			ret[i][2] = (byte) (((color >> 10) & 0x1F) * 8);
+			ret[i][1] = (byte) (((color >> 5) & 0x1F) * 8);
+			ret[i][0] = (byte) (((color >> 0) & 0x1F) * 8);
+
+			System.out.println(ret[i][0] + " " + ret[i][1] + " " + ret[i][2]);
 		}
 
 		// make black;
 		// separate operation just in case I don't wanna change pal's values
-		ret[0][0] = 0;
-		ret[0][1] = 0;
-		ret[0][2] = 0;
+		//ret[0][0] = 0;
+		//ret[0][1] = 0;
+		//ret[0][2] = 0;
 
 		return ret;
 	}
@@ -688,13 +696,7 @@ public class SpriteAnimator extends JPanel {
 		
 		return image;
 	}
-	/*
-	 * Draw controls
-	 */
-	public void paint(Graphics g) {
-		Graphics2D g2 = (Graphics2D) g;
-		g2.drawImage(img, 0, 0, null);
-	}
+
 	/*
 	 * GUI related functions
 	 */
