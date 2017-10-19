@@ -92,7 +92,7 @@ public class PNGto4BPP {
 		final JFrame aboutFrame = new JFrame("About");
 		final Dimension d = new Dimension(600,382);
 		final Dimension d2 = new Dimension(600,600);
-		
+
 		final TextArea debugLog = new TextArea("Debug log:",0,0,TextArea.SCROLLBARS_VERTICAL_ONLY);
 		debugLog.setEditable(false);
 		// buttons
@@ -149,13 +149,13 @@ public class PNGto4BPP {
 		FileNameExtensionFilter imgFilter =
 				new FileNameExtensionFilter("PNG files", IMAGEEXTS);
 		FileNameExtensionFilter palFilter =
-				new FileNameExtensionFilter("Palette files (" + join(PALETTEEXTS,", ") +")"
-						, PALETTEEXTS);
+				new FileNameExtensionFilter("Palette files (" + join(PALETTEEXTS,", ") +")",
+						PALETTEEXTS);
 		FileNameExtensionFilter sprFilter =
 				new FileNameExtensionFilter("Sprite files", EXPORTEXTS);
 		FileNameExtensionFilter logFilter =
 				new FileNameExtensionFilter("text files", LOGEXTS);
-		
+
 		explorer.setAcceptAllFileFilterUsed(false);
 
 		final JPanel frame2 = new JPanel(new BorderLayout());
@@ -273,7 +273,6 @@ public class PNGto4BPP {
 				}
 				explorer.removeChoosableFileFilter(imgFilter);
 			}});
-		
 
 		// palette button
 		palBtn.addActionListener(new ActionListener() {
@@ -317,18 +316,14 @@ public class PNGto4BPP {
 				ConvertPngToSprite(false);	
 			}});
 
-
 		//If arguments are greater than 1, then we have the neccesary arguemnts to do command line processing.
-		if(args.length > 1)
-		{
+		if(args.length > 1) {
 			//If we encountered no errors processing the arguments, then convert and end program.
-			if(ProcessArgs(args))
-			{
+			if(ProcessArgs(args)) {
 				System.exit(0);
 			}
 			//Leave program open with the fields that succeeded in being set.
-			else
-			{
+			else {
 				System.out.println("Failed to Process Arguments.");
 			}
 		}
@@ -338,8 +333,7 @@ public class PNGto4BPP {
 // Summary
 	// ProcessArgs checks if the arguments are valid, and if so, sets the TextFields and ComboBox with the values from the passed arguments.
 	// Returns True if arguments were processed successfuly. False if not. 
-	public static boolean ProcessArgs(String[] args)
-	{		
+	public static boolean ProcessArgs(String[] args) {		
 		if(args.length < 2 || args.length > 5)
 			return false;
 		String imgSrc= "";
@@ -349,40 +343,34 @@ public class PNGto4BPP {
 		int palOption = -1;
 		boolean argumentErrorsFound = false;
 
-		for(int i = 0; i < args.length; i++)
-		{
+		for(int i = 0; i < args.length; i++) {
 			//Tokenize arg
 			String[] tokens = args[i].split("=");
 			//System.out.println(tokens[0]);
-			
+
 			// imgSrc: Full Path for Image
 			// palOption: palFileOption [0:ASCII(.GPL|.PAL), 1:Binary(YY .PAL), 2:Extract from Last Block of PNG]
 			// palSrc:(Used if Option 0 or 1 selected) Full Path for Pal File.
 			// sprTarget: Name of Sprite that will be created.
-			if(tokens.length == 2)
-			{
-				switch(tokens[0])
-				{
+			if(tokens.length == 2) {
+				switch(tokens[0]) {
 					case "imgSrc":
 						imgSrc = tokens[1];
 						imageName.setText(imgSrc);
 						break;
 					case "palOption":
-						if(IsInteger(tokens[i]))
-						{
+						if(IsInteger(tokens[i])) {
 							palOption = Integer.parseInt(tokens[1]);
 
-							if(palOption >= 0 && palOption < palOptions.getItemCount())
-							{
+							if(palOption >= 0 && palOption < palOptions.getItemCount()) {
 								palOptions.setSelectedIndex(palOption);
 							}
-							else
-							{
+							else {
 								System.out.println("The palOption: " + palOption + " is out of range.");
 								argumentErrorsFound = true;
 							}
 						}
-						else{
+						else {
 							System.out.println("The argument: " + tokens[1] + " is not a valid integer to specify the palette Option. 0: ASCII, 1:Binary, 2:Extract from Last Block of PNG");
 							argumentErrorsFound = true;
 						}
@@ -400,8 +388,7 @@ public class PNGto4BPP {
 						break;
 				}
 			}
-			else
-			{
+			else {
 				System.out.println("The argument: " + args[i] + " is invalid.");
 				argumentErrorsFound = true;
 			}			
@@ -411,36 +398,29 @@ public class PNGto4BPP {
 			return false;
 
 		// Ensure imgSrc exists
-		if(imgSrc == "")
-		{
+		if(imgSrc == "") {
 			System.out.println("No Source Image was specified or was not specified correctly.");
 			argumentErrorsFound = true;
 		}
 
 		// enters here if palMethod is between 1-3
-		if(palSrc == "" && (palOption == 0 || palOption == 1))
-		{
+		if(palSrc == "" && (palOption == 0 || palOption == 1)) {
 			System.out.println("No palette Source was specified despite using a palette method that requires it.");
 			argumentErrorsFound = true;
 		}
-		
+
 		// If sprite target name is not set, use the img source name with .spr extension.
-		if(sprTarget == "")
-		{
+		if(sprTarget == "") {
 			sprTarget = ChangeExtension(imgSrc, "spr");
 			fileName.setText(sprTarget);
 		}
-					
-		
+
 		// If all arguments check out, lets finish everything we want to do.
-		if(!argumentErrorsFound)
-		{
+		if(!argumentErrorsFound) {
 			// Returns true if successful
-			if(ConvertPngToSprite(true))
-			{
-				
-				if(romTarget != "")
-				{
+			if(ConvertPngToSprite(true)) {
+
+				if(romTarget != "") {
 					try {
 						// Push change to ROM
 						UpdateRom(sprTarget, romTarget);
@@ -448,23 +428,21 @@ public class PNGto4BPP {
 						System.out.println("ERROR: " + e);
 						return false;
 					}
-
 				}
 			}
 		}
 		return !argumentErrorsFound;
 	}
 
-	public static void UpdateRom(String sprTarget, String romTarget) throws IOException, FileNotFoundException
-	{
+	public static void UpdateRom(String sprTarget, String romTarget) throws IOException, FileNotFoundException {
 		byte[] rom_patch;
 		byte[] sprite_data = new byte[0x7078];
-		
+
 		// filestream open .spr file
 		FileInputStream fsInput = new FileInputStream(sprTarget);
 		fsInput.read(sprite_data);
 		fsInput.close();
-		
+
 		// Acquire rom data
 		fsInput = new FileInputStream(romTarget);
 		rom_patch = new byte[(int)fsInput.getChannel().size()];
@@ -475,12 +453,10 @@ public class PNGto4BPP {
 		// filestream save .spr file to rom
 		FileOutputStream fsOut = new FileOutputStream(romTarget);
 
-		for(int i = 0;i<0x7000;i++)
-		{
+		for(int i = 0;i<0x7000;i++) {
 			rom_patch[0x80000 + i] = sprite_data[i];
 		}
-		for (int i = 0; i < 0x78; i++)
-		{
+		for (int i = 0; i < 0x78; i++) {
 			rom_patch[0x0DD308 + i] = sprite_data[i+0x7000];
 		}
 		fsOut.write(rom_patch, 0, rom_patch.length);
@@ -508,8 +484,7 @@ public class PNGto4BPP {
 		return filename;
 	}
 
-	public static boolean ConvertPngToSprite(boolean ignoreSuccessMessage)
-	{
+	public static boolean ConvertPngToSprite(boolean ignoreSuccessMessage) {
 		byte[] rando = new byte[16];
 		for (int i = 0; i < rando.length; i++) // initialize rando with -1 to prevent static in the trans areas
 			rando[i] = -1;
@@ -711,8 +686,7 @@ public class PNGto4BPP {
 			return false;
 		}
 
-		if(!ignoreSuccessMessage)
-		{
+		if(!ignoreSuccessMessage) {
 			// success
 			JOptionPane.showMessageDialog(frame,
 				"Sprite file successfully written to " + (new File(loc).getName()),
