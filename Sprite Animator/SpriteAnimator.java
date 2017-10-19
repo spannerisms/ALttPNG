@@ -476,24 +476,24 @@ public class SpriteAnimator extends Component {
 				int animMode = run.getMode();
 				// button disabling
 				switch(animMode) {
-				case 0 :
-					fasterBtn.setEnabled(true);
-					slowerBtn.setEnabled(true);
-					resetBtn.setEnabled(true);
-					stepBtn.setEnabled(false);
-					break;
-				case 1 :
-					fasterBtn.setEnabled(false);
-					slowerBtn.setEnabled(false);
-					resetBtn.setEnabled(true);
-					stepBtn.setEnabled(true);
-					break;
-				case 2 :
-					fasterBtn.setEnabled(false);
-					slowerBtn.setEnabled(false);
-					resetBtn.setEnabled(true);
-					stepBtn.setEnabled(false);
-					break;
+					case 0 :
+						fasterBtn.setEnabled(true);
+						slowerBtn.setEnabled(true);
+						resetBtn.setEnabled(true);
+						stepBtn.setEnabled(false);
+						break;
+					case 1 :
+						fasterBtn.setEnabled(false);
+						slowerBtn.setEnabled(false);
+						resetBtn.setEnabled(true);
+						stepBtn.setEnabled(true);
+						break;
+					case 2 :
+						fasterBtn.setEnabled(false);
+						slowerBtn.setEnabled(false);
+						resetBtn.setEnabled(true);
+						stepBtn.setEnabled(false);
+						break;
 				}
 				run.reset();
 			}});
@@ -609,18 +609,24 @@ public class SpriteAnimator extends Component {
 			color <<= 8;
 			color |= sprite[pos];
 			
-			ret[i][2] = (byte) (((color >> 10) & 0x1F) * 8);
-			ret[i][1] = (byte) (((color >> 5) & 0x1F) * 8);
-			ret[i][0] = (byte) (((color >> 0) & 0x1F) * 8);
+			ret[i][0] = (byte) (((color >> 0) & 0x1F) << 3);
+			ret[i][1] = (byte) (((color >> 5) & 0x1F) << 3);
+			ret[i][2] = (byte) (((color >> 10) & 0x1F) << 3);
 
-			System.out.println(ret[i][0] + " " + ret[i][1] + " " + ret[i][2]);
+			System.out.println(
+					((ret[i][0]+256)%256)
+					+ " " +
+					((ret[i][1]+256)%256)
+					+ " " +
+					((ret[i][2]+256)%256)
+							);
 		}
 
 		// make black;
 		// separate operation just in case I don't wanna change pal's values
-		//ret[0][0] = 0;
-		//ret[0][1] = 0;
-		//ret[0][2] = 0;
+		ret[0][0] = 0;
+		ret[0][1] = 0;
+		ret[0][2] = 0;
 
 		return ret;
 	}
