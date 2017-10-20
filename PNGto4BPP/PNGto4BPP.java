@@ -28,6 +28,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
@@ -41,7 +42,10 @@ public class PNGto4BPP {
 	// accepted extensions
 	final static String[] IMAGEEXTS = { "png" };
 	final static String[] PALETTEEXTS = { "gpl", "pal", "txt" };
-	final static String[] EXPORTEXTS = { "spr" };
+	final static String[] BINARYEXTS = { "pal" };
+	final static String[] SPREXTS = { "spr" };
+	final static String[] ROMEXTS = { "sfc" };
+	final static String[] EXPORTEXTS = { "spr", "sfc" };
 	final static String[] LOGEXTS = { "txt" };
 
 	//These fields are utilized by functions
@@ -151,8 +155,12 @@ public class PNGto4BPP {
 		FileNameExtensionFilter palFilter =
 				new FileNameExtensionFilter("Palette files (" + join(PALETTEEXTS,", ") +")",
 						PALETTEEXTS);
+		FileNameExtensionFilter binPalFilter =
+				new FileNameExtensionFilter("YY-CHR palettes", BINARYEXTS);
 		FileNameExtensionFilter sprFilter =
-				new FileNameExtensionFilter("Sprite files", EXPORTEXTS);
+				new FileNameExtensionFilter("Sprite files", SPREXTS);
+		FileNameExtensionFilter romFilter =
+				new FileNameExtensionFilter("ROM files", ROMEXTS);
 		FileNameExtensionFilter logFilter =
 				new FileNameExtensionFilter("text files", LOGEXTS);
 
@@ -221,6 +229,7 @@ public class PNGto4BPP {
 				explorer.setSelectedFile(new File("error log (" + System.currentTimeMillis() + ").txt"));
 				explorer.setFileFilter(logFilter);
 				int option = explorer.showSaveDialog(expLog);
+				removeFilters(explorer);
 				if (option == JFileChooser.CANCEL_OPTION)
 					return;
 				String n = "";
@@ -237,7 +246,7 @@ public class PNGto4BPP {
 						return;
 					}
 				}
-				explorer.removeChoosableFileFilter(logFilter);
+				
 				PrintWriter logBugs;
 				try {
 					logBugs = new PrintWriter(n);
@@ -262,6 +271,7 @@ public class PNGto4BPP {
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(imgFilter);
 				int option = explorer.showOpenDialog(imageBtn);
+				removeFilters(explorer);
 				if (option == JFileChooser.CANCEL_OPTION)
 					return;
 				String n = "";
@@ -273,15 +283,18 @@ public class PNGto4BPP {
 					if (testFileType(n,IMAGEEXTS))
 						imageName.setText(n);
 				}
-				explorer.removeChoosableFileFilter(imgFilter);
 			}});
 
 		// palette button
 		palBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
-				explorer.setFileFilter(palFilter);
+				if (palOptions.getSelectedIndex() == 1)
+					explorer.setFileFilter(binPalFilter);
+				else
+					explorer.setFileFilter(palFilter);
 				int option = explorer.showOpenDialog(palBtn);
+				removeFilters(explorer);
 				if (option == JFileChooser.CANCEL_OPTION)
 					return;
 				String n = "";
@@ -293,7 +306,6 @@ public class PNGto4BPP {
 					if (testFileType(n,PALETTEEXTS))
 						palName.setText(n);
 				}
-				explorer.removeChoosableFileFilter(palFilter);
 			}});
 
 		// file name button
@@ -301,7 +313,9 @@ public class PNGto4BPP {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(sprFilter);
+				explorer.addChoosableFileFilter(romFilter);
 				int option = explorer.showOpenDialog(fileNameBtn);
+				removeFilters(explorer);
 				if (option == JFileChooser.CANCEL_OPTION)
 					return;
 				String n = "";
@@ -313,7 +327,6 @@ public class PNGto4BPP {
 					if (testFileType(n,EXPORTEXTS))
 						fileName.setText(n);
 				}
-				explorer.removeChoosableFileFilter(sprFilter);
 			}});
 
 		// run button
@@ -441,17 +454,21 @@ public class PNGto4BPP {
 	}
 
 	public static void UpdateRom(String sprTarget, String romTarget) throws IOException, FileNotFoundException {
-		byte[] rom_patch;
+
 		byte[] sprite_data = new byte[0x7078];
 
 		// filestream open .spr file
 		FileInputStream fsInput = new FileInputStream(sprTarget);
 		fsInput.read(sprite_data);
 		fsInput.close();
+		patchRom(sprite_data, romTarget);
+	}
 
+	public static void patchRom(byte[] spr, String romTarget) throws IOException, FileNotFoundException {
 		// Acquire rom data
-		fsInput = new FileInputStream(romTarget);
-		rom_patch = new byte[(int)fsInput.getChannel().size()];
+		byte[] rom_patch;
+		FileInputStream fsInput = new FileInputStream(romTarget);
+		rom_patch = new byte[(int) fsInput.getChannel().size()];
 		fsInput.read(rom_patch);
 		fsInput.getChannel().position(0);
 		fsInput.close();
@@ -460,10 +477,10 @@ public class PNGto4BPP {
 		FileOutputStream fsOut = new FileOutputStream(romTarget);
 
 		for(int i = 0;i<0x7000;i++) {
-			rom_patch[0x80000 + i] = sprite_data[i];
+			rom_patch[0x80000 + i] = spr[i];
 		}
 		for (int i = 0; i < 0x78; i++) {
-			rom_patch[0x0DD308 + i] = sprite_data[i+0x7000];
+			rom_patch[0x0DD308 + i] = spr[i+0x7000];
 		}
 		fsOut.write(rom_patch, 0, rom_patch.length);
 
@@ -506,7 +523,7 @@ public class PNGto4BPP {
 		byte[][][] eightbyeight;
 		int palChoice = palOptions.getSelectedIndex(); // see which palette method we're using
 		boolean extensionERR = false; // let the program spit out all extension errors at once
-
+		boolean patchingROM = false;
 		// test image type
 		if (!testFileType(imgName,IMAGEEXTS)) {
 			JOptionPane.showMessageDialog(frame,
@@ -558,10 +575,15 @@ public class PNGto4BPP {
 			}
 		}
 
-		// only allow sprite files
+		// sfc means we're patching a ROM
+		if (testFileType(loc,"sfc"))
+			patchingROM = true;
+
+		// only allow sprite/ROM files
 		if (!testFileType(loc,EXPORTEXTS)) {
 			JOptionPane.showMessageDialog(frame,
-					"Export location must be of the following extensions:\n" + join(EXPORTEXTS,", "),
+					"Export location must be of the following extensions:\n" +
+					join(EXPORTEXTS,", "),
 					"Oops",
 					JOptionPane.WARNING_MESSAGE);
 			extensionERR = true;
@@ -675,7 +697,9 @@ public class PNGto4BPP {
 
 		// make the file
 		try {
-			new File(loc);
+			// only try to make a file if we're making a new sprite
+			if (!patchingROM)
+				new File(loc);
 		} catch (NullPointerException e) {
 			JOptionPane.showMessageDialog(frame,
 					"Invalid file name",
@@ -691,7 +715,10 @@ public class PNGto4BPP {
 
 		// write data to SPR file
 		try {
-			writeSPR(SNESdata, loc);
+			if (patchingROM)
+				patchRom(SNESdata, loc);
+			else
+				writeSPR(SNESdata, loc);
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(frame,
 					"Error writing sprite",
@@ -704,7 +731,9 @@ public class PNGto4BPP {
 		if(!ignoreSuccessMessage) {
 			// success
 			JOptionPane.showMessageDialog(frame,
-				"Sprite file successfully written to " + (new File(loc).getName()),
+				"Sprite file successfully " +
+				(patchingROM ? "patched" : "written") +
+				" to " + (new File(loc).getName()),
 				"YAY",
 				JOptionPane.PLAIN_MESSAGE);
 		}		
@@ -1213,6 +1242,12 @@ public class PNGto4BPP {
 	public static int unsignByte(byte b) {
 		int ret = ((b + 256) % 256);
 		return ret;
+	}
+	
+	public static void removeFilters(JFileChooser ex) {
+		FileFilter[] exlist = ex.getChoosableFileFilters();
+		for (FileFilter r : exlist)
+			ex.removeChoosableFileFilter(r);
 	}
 	// errors
 
