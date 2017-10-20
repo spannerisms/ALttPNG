@@ -221,6 +221,8 @@ public class PNGto4BPP {
 				explorer.setSelectedFile(new File("error log (" + System.currentTimeMillis() + ").txt"));
 				explorer.setFileFilter(logFilter);
 				int option = explorer.showSaveDialog(expLog);
+				if (option == JFileChooser.CANCEL_OPTION)
+					return;
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
@@ -236,8 +238,6 @@ public class PNGto4BPP {
 					}
 				}
 				explorer.removeChoosableFileFilter(logFilter);
-				if (option == JFileChooser.CANCEL_OPTION)
-					return;
 				PrintWriter logBugs;
 				try {
 					logBugs = new PrintWriter(n);
@@ -261,7 +261,9 @@ public class PNGto4BPP {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(imgFilter);
-				explorer.showOpenDialog(imageBtn);
+				int option = explorer.showOpenDialog(imageBtn);
+				if (option == JFileChooser.CANCEL_OPTION)
+					return;
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
@@ -279,7 +281,9 @@ public class PNGto4BPP {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(palFilter);
-				explorer.showOpenDialog(palBtn);
+				int option = explorer.showOpenDialog(palBtn);
+				if (option == JFileChooser.CANCEL_OPTION)
+					return;
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
@@ -297,7 +301,9 @@ public class PNGto4BPP {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(sprFilter);
-				explorer.showOpenDialog(fileNameBtn);
+				int option = explorer.showOpenDialog(fileNameBtn);
+				if (option == JFileChooser.CANCEL_OPTION)
+					return;
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
