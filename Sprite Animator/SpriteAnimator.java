@@ -204,6 +204,7 @@ public class SpriteAnimator extends Component {
 	private BufferedImage img = null; // sprite sheet
 	private int anime; // animation id
 	private int speed; // speed; 0 = normal; positive = faster; negative = slower
+	private int baseSpeed = 100; // base speed in milliseconds
 	private int mode; // animation mode
 	private int frame;
 	private int maxFrame;
@@ -219,7 +220,7 @@ public class SpriteAnimator extends Component {
 		frame = 0;
 		maxFrame = 0;
 		running = true;
-		tick = new Timer(100, new ActionListener() {
+		tick = new Timer(baseSpeed, new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				if (isRunning())
 					step();
@@ -358,6 +359,7 @@ public class SpriteAnimator extends Component {
 	public boolean faster() {
 		if (speed < MAXSPEED)
 			speed++;
+		adjustTimer();
 		return atMaxSpeed();
 	}
 	
@@ -368,7 +370,15 @@ public class SpriteAnimator extends Component {
 	public boolean slower() {
 		if (speed > (MAXSPEED * -1))
 			speed--;
+		adjustTimer();
 		return atMinSpeed();
+	}
+	
+	/**
+	 * Adjusts timer based on speed
+	 */
+	public void adjustTimer() {
+		tick.setDelay(baseSpeed - 16 * speed);
 	}
 	/**
 	 * Compares current step speed to maximum speed allowed.
@@ -600,8 +610,9 @@ public class SpriteAnimator extends Component {
 		frame.add(bottomStuffWrap, BorderLayout.CENTER);
 		frame.add(loadWrap,BorderLayout.NORTH);
 		frame.setSize(d);
+		frame.setMinimumSize(d);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setResizable(false);
+
 		frame.setLocation(300,300);
 		frame.setJMenuBar(menu);
 		
