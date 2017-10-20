@@ -82,6 +82,7 @@ public class SpriteAnimator extends Component {
 	 *		TL : Top-left 8x8
 	 *		BR : Bottom-right 8x8
 	 *		BL : Bottom-left 8x8
+	 *		E  : Empty frame 0x0
 	 * TRANSFORM is a flag determining how to flip the sprite
 	 *		0  : No transform
 	 *		U  : Mirror along X-axis
@@ -101,9 +102,9 @@ public class SpriteAnimator extends Component {
 					"K3{-1,8}{F}{0}:B2{0,16}{F}{0};" +
 					"K4{-1,8}{F}{0}:Q7{0,16}{F}{0};" +
 					"A0{-1,8}{F}{0}:S4{0,16}{F}{0};" +
-					"A0{-1,8}{F}{0}:S4{0,16}{F}{0};" +
-					"K3{-1,8}{F}{0}:S4{0,16}{F}{0};" +
-					"K4{-1,8}{F}{0}:S4{0,16}{F}{0};",
+					"A0{-1,8}{F}{0}:R6{0,16}{F}{0};" +
+					"K3{-1,8}{F}{0}:R7{0,16}{F}{0};" +
+					"K4{-1,8}{F}{0}:S3{0,16}{F}{0};",
 			// walkUp - A2:B6,A2:C0,A2:S7,A2:T3,A2:T7,A2:T4,A2:T5,A2:T6
 			"A2{0,0}{F}{0}:B6{0,16}{F}{0};" +
 				"A2{0,0}{F}{0}:C0{0,16}{F}{0};" +
@@ -668,9 +669,9 @@ public class SpriteAnimator extends Component {
 				"A1{0,0}{F}{0}:V3{0,16}{F}{0};" +
 				"A1{0,0}{F}{0}:V4{0,16}{F}{0}",
 			// mapDungeon - K7
-			"K7{0,0}{F}{0}",
+			"K7{0,0}{F}{0};K7{0,0}{E}{0}",
 			// mapWorld - Y7
-			"Y7{0,0}{F}{0}",
+			"Y7{0,0}{F}{0};Y7{0,0}{E}{0}",
 			// sleep - A6:D3
 			"A6{0,0}{F}{0}:D3{0,16}{F}{0}",
 			// awake - E3:D3
@@ -823,6 +824,7 @@ public class SpriteAnimator extends Component {
 	 */
 	public void resetFrame() {
 		frame = 0;
+		repaint();
 	}
 	
 	/**
@@ -982,7 +984,11 @@ public class SpriteAnimator extends Component {
 				}
 				drawX += drawXoffset;
 				drawY += drawYoffset;
-				BufferedImage spreet = img.getSubimage(drawX, drawY, width, height);
+				BufferedImage spreet;
+				if (sprSize.equals("E"))
+					spreet = new BufferedImage(16, 16, BufferedImage.TYPE_4BYTE_ABGR_PRE);
+				else
+					spreet = img.getSubimage(drawX, drawY, width, height);
 				
 				// put it in backwards to preserve draw order
 				frames[i][spriteCount-1-j] = new Sprite(spreet, xpos, ypos, j);
@@ -998,7 +1004,8 @@ public class SpriteAnimator extends Component {
 		Graphics2D g2 = (Graphics2D) g;
 		g2.scale(3.0, 3.0);
 		for(Sprite s : frames[frame])
-			s.draw(g2);
+			if (s!=null)
+				s.draw(g2);
 	}
 
 	// error controller
