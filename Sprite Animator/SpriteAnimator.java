@@ -35,7 +35,7 @@ public class SpriteAnimator extends Component {
 	static final int RASTERSIZE = 128 * 448 * 4;
 
 	// used for parsing frame data
-	static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZαβ";
+	static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZαβ".toUpperCase(); // to uppercase to distinguish alpha/beta
 	// format of snes 4bpp {row (r), bit plane (b)}
 	// bit plane 0 indexed such that 1011 corresponds to 0123
 	static final int BPPI[][] = {
@@ -201,7 +201,7 @@ public class SpriteAnimator extends Component {
 	 *		UM : Mirror along both axes
 	 */
 	static final String[] ALLFRAMES = {
-			/* Bunny walk Down */ "Z5{0,0}{F}{0}:α0{0,16}{F}{0} ; Z5{0,0}{F}{0}:Z7{0,16}{F}{0}"
+			/* Bunny walk Down */ "Z5{0,8}{F}{0}:α0{0,16}{F}{0} ; Z5{0,9}{F}{0}:Z7{0,16}{F}{0}"
 	};
 
 	/*
@@ -261,8 +261,7 @@ public class SpriteAnimator extends Component {
 		if (img == null)
 			return;
 		anime = id;
-		int[][][] frameData = FRAMES[anime];
-		makeAnimationFrames(frameData);
+		makeAnimationFrames();
 		reset();
 	}
 	
@@ -398,12 +397,12 @@ public class SpriteAnimator extends Component {
 	public void makeAnimationFrames() {
 		if (img == null)
 			return;
-		String f = ALLFRAMES[frame].toUpperCase().replace(" ", ""); // CAPS and remove all whitespace
+		String f = ALLFRAMES[anime].toUpperCase().replace(" ", ""); // CAPS and remove all whitespace
 		String[] eachFrame = f.split(";"); // split by frame
-		int frameCount = eachFrame.length;
-		Sprite[][] frames = new Sprite[frameCount][];
+		maxFrame = eachFrame.length;
+		frames = new Sprite[maxFrame][];
 		// each frame
-		for (int i = 0; i < frameCount; i++) {
+		for (int i = 0; i < maxFrame; i++) {
 			String[] eachSprite = eachFrame[i].split(":");
 			int spriteCount = eachSprite.length;
 			// each sprite in frame
@@ -419,6 +418,7 @@ public class SpriteAnimator extends Component {
 				int xpos = Integer.parseInt(pos[0]);
 				int ypos = Integer.parseInt(pos[1]);
 				int drawY = ALPHA.indexOf(sprIndex[0]) * 16;
+				System.out.println(sprIndex[0] + " " + sprIndex[0]);
 				int drawX = Integer.parseInt((sprIndex[1] + "")) * 16;
 				int drawYoffset, drawXoffset, width, height;
 				
@@ -498,6 +498,7 @@ public class SpriteAnimator extends Component {
 	public void paint(Graphics g) {
 		if (frames==null || frames[frame] == null)
 			return;
+		System.out.println(frame + " " + maxFrame);
 		Graphics2D g2 = (Graphics2D) g;
 		for(Sprite s : frames[frame])
 			s.draw(g2);
