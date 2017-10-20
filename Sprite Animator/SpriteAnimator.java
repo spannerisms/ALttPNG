@@ -3,6 +3,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.TextArea;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -15,6 +16,8 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -381,7 +384,8 @@ public class SpriteAnimator extends Component {
 		if (frames==null || frames[frame] == null)
 			return;
 		Graphics2D g2 = (Graphics2D) g;
-		g2.drawImage(frames[frame], 0, 0, null);
+		g2.drawImage(img, 0, 0, null);
+		//g2.drawImage(frames[frame], 0, 0, null);
 	}
 
 	// error controller
@@ -403,9 +407,8 @@ public class SpriteAnimator extends Component {
 					// do nothing
 			} //end System
 		} // end Nimbus
-		
 		final JFrame frame = new JFrame("Sprite animator");
-		final Dimension d = new Dimension(600,682);
+		final Dimension d = new Dimension(600,282);
 		final JTextField fileName = new JTextField("");
 		final JButton fileNameBtn = new JButton("SPR file");
 		final JButton loadBtn = new JButton("Load file");
@@ -441,14 +444,53 @@ public class SpriteAnimator extends Component {
 		btnWrap.add(loadBtn,BorderLayout.EAST);
 		loadWrap.add(btnWrap,BorderLayout.EAST);
 		loadWrap.add(fileName,BorderLayout.CENTER);
-		
+
+		// Credits
+		final JFrame aboutFrame = new JFrame("About");
+		final JMenuItem peeps = new JMenuItem("About");
+		final TextArea peepsList = new TextArea("", 0,0,TextArea.SCROLLBARS_VERTICAL_ONLY);
+		peepsList.setEditable(false);
+		peepsList.append("Written by fatmanspanda"); // hey, that's me
+		peepsList.append("\n\nFrame resources:\n");
+		peepsList.append("http://alttp.mymm1.com/sprites/includes/animations.txt\n");
+		peepsList.append(join(new String[]{
+				"\tMikeTrethewey", // it's mike
+				"TWRoxas", // provided most valuable documentation
+				}, ", "));// forced me to do this and falls in every category
+		peepsList.append("\n\nCode contribution:\n");
+		peepsList.append(join(new String[]{
+				"Zarby89", // spr conversion
+				}, ", "));
+		peepsList.append("\n\nResources and development:\n");
+		peepsList.append(join(new String[]{
+				"Veetorp", // provided most valuable documentation
+				"Zarby89", // various documentation and answers
+				"Sosuke3" // various snes code answers
+				}, ", "));
+		// no one yet
+		/*peepsList.append("\n\nTesting and feedback:\n");
+		peepsList.append(join(new String[]{
+				"",
+				}, ", "));*/
+		aboutFrame.add(peepsList);
+		final JMenuBar menu = new JMenuBar();
+		menu.add(peeps);
+		peeps.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				aboutFrame.setVisible(true);
+			}});
+		aboutFrame.setSize(600,300);
+		aboutFrame.setResizable(false);
+		// end credits
+
 		frame.add(bottomStuff, BorderLayout.CENTER);
 		frame.add(loadWrap,BorderLayout.NORTH);
 		frame.setSize(d);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
-		frame.setLocation(100,100);
-
+		frame.setLocation(300,300);
+		frame.setJMenuBar(menu);
+		
 		// file explorer
 		final JFileChooser explorer = new JFileChooser();
 		FileNameExtensionFilter sprFilter =
@@ -571,6 +613,11 @@ public class SpriteAnimator extends Component {
 						break;
 				}
 			}});
+		
+		stepBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				run.step();
+			}});
 		// turn on
 		frame.setVisible(true);
 	}
@@ -642,12 +689,12 @@ public class SpriteAnimator extends Component {
 	 */
 	public static byte[][] getPal(byte[] sprite) {
 		byte[][] ret = new byte[16][3];
-		for (int i = 0; i < 16; i++) {
-			short color = 0x0;
+		for (int i = 1; i < 16; i++) {
+			short color = 0;
 			int pos = SPRITESIZE + (i * 2) - 2;
-			color = sprite[pos+1];
+			color = (short) unsignByte(sprite[pos+1]);
 			color <<= 8;
-			color |= sprite[pos];
+			color |= (short) unsignByte(sprite[pos]);
 			
 			ret[i][0] = (byte) (((color >> 0) & 0x1F) << 3);
 			ret[i][1] = (byte) (((color >> 5) & 0x1F) << 3);
@@ -786,5 +833,31 @@ public class SpriteAnimator extends Component {
 	 */
 	public static boolean testFileType(String s, String type) {
 		return testFileType(s, new String[] { type });
+	}
+	
+	/**
+	 * Join array of strings together with a delimiter.
+	 * @param s - array of strings
+	 * @param c - delimiter
+	 * @return A single <tt>String</tt>.
+	 */
+	public static String join(String[] s, String c) {
+		String ret = "";
+		for (int i = 0; i < s.length; i++) {
+			ret += s[i];
+			if (i != s.length-1)
+				ret += c;
+		}
+		return ret;
+	}
+
+	/**
+	 * 
+	 * @param b
+	 * @return
+	 */
+	public static int unsignByte(byte b) {
+		int ret = (b + 256) % 256;
+		return ret;
 	}
 }
