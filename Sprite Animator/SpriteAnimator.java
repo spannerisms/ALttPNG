@@ -34,6 +34,7 @@ public class SpriteAnimator extends Component {
 	static final int PALETTESIZE = 0x78; // not simplified to understand the numbers
 	static final int RASTERSIZE = 128 * 448 * 4;
 
+	// used for parsing frame data
 	static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZαβ";
 	// format of snes 4bpp {row (r), bit plane (b)}
 	// bit plane 0 indexed such that 1011 corresponds to 0123
@@ -177,6 +178,32 @@ public class SpriteAnimator extends Component {
 			{ { { 64, 48, 16, 16, 0, 0, 0 }, { 48, 48, 16, 16, 0, 0, 0 } } }
 	};
 	
+	/* Redoing this frame garbage, testing with bunny:
+	 * bunnyWalkDown|Z5:AA0,Z5:Z7
+	 * format:
+	 * <INDEX>{<XPOS>,<YPOS>}{<SPRITESIZE>}{<TRANSFORM>}
+	 * : delimits sprites in the same frame
+	 * ; delimits entire frames
+	 * SPRITESIZE is a flag determining what part of the sprite to draw from
+	 *		F  : Full 16x16
+	 *		T  : Top 16x8
+	 *		B  : Bottom 16x8
+	 *		R  : Right 8x16
+	 *		L  : Left 8x16
+	 *		TR : Top-right 8x8 ; alias : turtle rock
+	 *		TL : Top-left 8x8
+	 *		BR : Bottom-right 8x8
+	 *		BL : Bottom-left 8x8
+	 * TRANSFORM is a flag determining how to flip the sprite
+	 *		0  : No transform
+	 *		U  : Mirror along X-axis
+	 *		M  : Mirror along y-axis
+	 *		UM : Mirror along both axes
+	 */
+	static final String[] ALLFRAMES = {
+			/* Bunny walk Down */ "Z5{0,0}{F}{0}:α0{0,16}{F}{0} ; Z5{0,0}{F}{0}:Z7{0,16}{F}{0}"
+	};
+
 	/*
 	 * GUI stuff
 	 */
@@ -368,19 +395,100 @@ public class SpriteAnimator extends Component {
 	/**
 	 * Makes an array of {@link Sprite}s based on the frame data.
 	 */
-	public void makeAnimationFrames(int[][][] data) {
+	public void makeAnimationFrames() {
 		if (img == null)
 			return;
-		maxFrame = data.length;
-		frames = new Sprite[maxFrame][];
-		for (int i = 0; i < maxFrame; i++) {
-			int frameSpriteCount = data[i].length;
-			frames[i] = new Sprite[frameSpriteCount];
-			for (int j = 0; j < frameSpriteCount; j++) {
-				BufferedImage spreet = img.getSubimage(data[i][j][1], data[i][j][0], data[i][j][2], data[i][j][3]);
-				// TODO: z indexing
-				frames[i][j] = new Sprite(spreet,data[i][j][4],data[i][j][5],j);
-			
+		String f = ALLFRAMES[frame].toUpperCase().replace(" ", ""); // CAPS and remove all whitespace
+		String[] eachFrame = f.split(";"); // split by frame
+		int frameCount = eachFrame.length;
+		Sprite[][] frames = new Sprite[frameCount][];
+		// each frame
+		for (int i = 0; i < frameCount; i++) {
+			String[] eachSprite = eachFrame[i].split(":");
+			int spriteCount = eachSprite.length;
+			// each sprite in frame
+			frames[i] = new Sprite[spriteCount];
+			for (int j = 0; j < spriteCount; j++) {
+				// split into info sections
+				String[] spriteSplit = eachSprite[j].split("[\\{\\}]{1,2}");
+				char[] sprIndex = spriteSplit[0].toCharArray();
+				String[] pos = spriteSplit[1].split(",");
+				String sprSize = spriteSplit[2];
+				String sprTrans = spriteSplit[3];
+				// sprite position
+				int xpos = Integer.parseInt(pos[0]);
+				int ypos = Integer.parseInt(pos[1]);
+				int drawY = ALPHA.indexOf(sprIndex[0]) * 16;
+				int drawX = Integer.parseInt((sprIndex[1] + "")) * 16;
+				int drawYoffset, drawXoffset, width, height;
+				
+				// determine offset from initial position
+				switch (sprSize) {
+					case "F" :
+						drawYoffset = 0;
+						drawXoffset = 0;
+						width = 16;
+						height = 16;
+						break;
+					case "T" :
+						drawYoffset = 0;
+						drawXoffset = 0;
+						width = 16;
+						height = 8;
+						break;
+					case "B" :
+						drawYoffset = 8;
+						drawXoffset = 0;
+						width = 16;
+						height = 8;
+						break;
+					case "R" :
+						drawYoffset = 0;
+						drawXoffset = 8;
+						width = 8;
+						height = 16;
+						break;
+					case "L" :
+						drawYoffset = 0;
+						drawXoffset = 0;
+						width = 8;
+						height = 16;
+						break;
+					case "TR" :
+						drawYoffset = 0;
+						drawXoffset = 8;
+						width = 8;
+						height = 8;
+						break;
+					case "TL" :
+						drawYoffset = 0;
+						drawXoffset = 0;
+						width = 8;
+						height = 8;
+						break;
+					case "BR" :
+						drawYoffset = 8;
+						drawXoffset = 8;
+						width = 8;
+						height = 8;
+						break;
+					case "BL" :
+						drawYoffset = 8;
+						drawXoffset = 0;
+						width = 8;
+						height = 8;
+						break;
+					default :
+						drawYoffset = 0;
+						drawXoffset = 0;
+						width = 16;
+						height = 16;
+						break;
+				}
+				drawX += drawXoffset;
+				drawY += drawYoffset;
+				BufferedImage spreet = img.getSubimage(drawX, drawY, width, height);
+				frames[i][j] = new Sprite(spreet, xpos, ypos, j);
 			}
 		}
 	}
