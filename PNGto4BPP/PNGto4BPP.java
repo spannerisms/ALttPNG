@@ -1,3 +1,5 @@
+package PNGto4BPP;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.TextArea;
@@ -51,7 +53,7 @@ public class PNGto4BPP {
 // palette reading methods
 	static String[] palChoices = {
 				"Read ASCII (" + join(PALETTEEXTS,", ") +")",
-				"Binary (YY .PAL)",
+				"Binary (YY-CHR .PAL)",
 				"Extract from last block of PNG"
 				};
 	static final JComboBox<String> palOptions = new JComboBox<String>(palChoices);
@@ -96,10 +98,10 @@ public class PNGto4BPP {
 		final TextArea debugLog = new TextArea("Debug log:",0,0,TextArea.SCROLLBARS_VERTICAL_ONLY);
 		debugLog.setEditable(false);
 		// buttons
-		final JButton imageBtn = new JButton("PNG file");
-		final JButton palBtn = new JButton("Pal file");
-		final JButton fileNameBtn = new JButton("File name");
-		final JButton runBtn = new JButton("Convert");
+		final JButton imageBtn = new JButton("Load PNG");
+		final JButton palBtn = new JButton("Load Palette");
+		final JButton fileNameBtn = new JButton("Set Export Filename");
+		final JButton runBtn = new JButton("Convert!");
 		final JButton clrLog = new JButton("Clear");
 		final JButton expLog = new JButton("Export");
 		// acknowledgements
@@ -152,7 +154,7 @@ public class PNGto4BPP {
 				new FileNameExtensionFilter("Palette files (" + join(PALETTEEXTS,", ") +")",
 						PALETTEEXTS);
 		FileNameExtensionFilter sprFilter =
-				new FileNameExtensionFilter("Sprite files", EXPORTEXTS);
+				new FileNameExtensionFilter("ALttP Sprite files", EXPORTEXTS);
 		FileNameExtensionFilter logFilter =
 				new FileNameExtensionFilter("text files", LOGEXTS);
 
@@ -334,8 +336,9 @@ public class PNGto4BPP {
 	// ProcessArgs checks if the arguments are valid, and if so, sets the TextFields and ComboBox with the values from the passed arguments.
 	// Returns True if arguments were processed successfuly. False if not. 
 	public static boolean ProcessArgs(String[] args) {		
-		if(args.length < 2 || args.length > 5)
+		if(args.length < 2 || args.length > 5) {
 			return false;
+		}
 		String imgSrc= "";
 		String palSrc = "";
 		String sprTarget = "";
@@ -512,11 +515,19 @@ public class PNGto4BPP {
 
 		// test palette type
 		if (!testFileType(paletteName,PALETTEEXTS) && (palChoice != 2)) {
-			JOptionPane.showMessageDialog(frame,
-					"Palettes must be of the following extensions:\n" + join(PALETTEEXTS,", "),
-					"Oops",
-					JOptionPane.WARNING_MESSAGE);
-			extensionERR = true;
+			if(paletteName.length() == 0) {
+				JOptionPane.showMessageDialog(frame,
+						"No Palette source was specified despite using a palette method that requires it",
+						"Oops",
+						JOptionPane.WARNING_MESSAGE);
+				extensionERR = true;
+			} else {
+				JOptionPane.showMessageDialog(frame,
+						"Palettes must be of the following extensions:\n" + join(PALETTEEXTS,", "),
+						"Oops",
+						JOptionPane.WARNING_MESSAGE);
+				extensionERR = true;
+			}
 		}
 
 		// save location
@@ -529,13 +540,16 @@ public class PNGto4BPP {
 			String HEX = "0123456789ABCDEF";
 			for (int i = 0; i < HEX.length(); i++) {
 				char a = HEX.charAt(i);
-				if (loc.indexOf(a) != -1)
+				if (loc.indexOf(a) != -1) {
 					bamboozarino[i] = true;
+				}
 			}
 
-			for (int i = 0; i < bamboozarino.length; i++)
-				if (bamboozarino[i])
+			for (int i = 0; i < bamboozarino.length; i++) {
+				if (bamboozarino[i]) {
 					rando[i] = (byte) i;
+				}
+			}
 			loc = "";
 		}
 
@@ -645,20 +659,28 @@ public class PNGto4BPP {
 		// binary (YY-CHR) pal
 		// TODO: this
 		if (palChoice == 1) {
-			if (!testFileType(paletteName, "pal")) {
-				JOptionPane.showMessageDialog(frame,
-						"Binary palette reading must by a .PAL file",
-						"Oops",
-						JOptionPane.WARNING_MESSAGE);
-				return false;
-			}
-			try {
-				byte[] palX = readFile(paletteName);
-				palette = palFromBinary(palX);
-				palData = palDataFromArray(palette);
-			} catch(Exception e) {
-				return false;
-			}
+			// FIXME Binary Palette reading
+			JOptionPane.showMessageDialog(frame,
+					"Binary Palette reading (such as for YY-CHR) is not available at this time",
+					"Oops",
+					JOptionPane.WARNING_MESSAGE);
+			extensionERR = true;
+			return false;
+
+//			if (!testFileType(paletteName, "pal")) {
+//				JOptionPane.showMessageDialog(frame,
+//						"Binary palette reading must by a .PAL file",
+//						"Oops",
+//						JOptionPane.WARNING_MESSAGE);
+//				return false;
+//			}
+//			try {
+//				byte[] palX = readFile(paletteName);
+//				palette = palFromBinary(palX);
+//				palData = palDataFromArray(palette);
+//			} catch(Exception e) {
+//				return false;
+//			}
 		}
 
 		// extract from last block
@@ -757,8 +779,9 @@ public class PNGto4BPP {
 		String ret = "";
 		for (int i = 0; i < s.length; i++) {
 			ret += s[i];
-			if (i != s.length-1)
+			if (i != s.length-1) {
 				ret += c;
+			}
 		}
 		return ret;
 	}
@@ -785,8 +808,9 @@ public class PNGto4BPP {
 	public static byte[] getImageRaster(BufferedImage img) throws BadDimensionsException {
 		int w = img.getWidth();
 		int h = img.getHeight();
-		if (w != 128 || h != 448)
+		if (w != 128 || h != 448) {
 			throw controller.new BadDimensionsException("Invalid dimensions of {" + w + "," + h + "}");
+		}
 		byte[] pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
 		return pixels;
 	}
@@ -857,8 +881,9 @@ public class PNGto4BPP {
 						colorArray[colori] = curCol;
 						colori++;
 					}
-					if (colori == 3)
+					if (colori == 3) {
 						break;
+					}
 				}
 				// read RGB bytes as ints
 				int r = colorArray[0];
@@ -867,22 +892,28 @@ public class PNGto4BPP {
 				palret[pali] = (r * 1000000) + (g * 1000) + b; // add to palette as RRRGGGBBB
 				pali++; // increment palette index
 			}
-			if (pali == 64)
+			if (pali == 64) {
 				break;
+			}
 		}
 		// short palettes throw an error
-		if (pali < 16 )
+		if (pali < 16 ) {
 			throw controller.new ShortPaletteException("Only " + pali + " colors were found.");
+		}
 		// truncate long palettes
 		int[] newret = new int[64];
 		pali = 16 * (pali / 16);
-		if (pali > 64)
+		if (pali > 64) {
 			pali = 64;
-		for (int i = 0; i < pali; i++)
+		}
+		for (int i = 0; i < pali; i++) {
 			newret[i] = palret[i];
-		if (pali < 64)
-			for (int i = pali; i < 64; i++)
+		}
+		if (pali < 64) {
+			for (int i = pali; i < 64; i++) {
 				newret[i] = palret[i%16];
+			}
+		}
 		return newret;
 	}
 
@@ -918,22 +949,28 @@ public class PNGto4BPP {
 				palret[pali] = (r * 1000000) + (g * 1000) + b; // add to palette as RRRGGGBBB
 				pali++; // increment palette index
 			}
-			if (pali == 64)
+			if (pali == 64) {
 				break;
+			}
 		}
 		// Paint.NET forces 96 colors, but put this here just in case
-		if (pali < 16 )
+		if (pali < 16 ) {
 			throw controller.new ShortPaletteException("Only " + pali + " colors were found.");
+		}
 		// truncate long palettes
 		int[] newret = new int[64];
 		pali = 16 * (pali / 16);
-		if (pali > 64)
+		if (pali > 64) {
 			pali = 64;
-		for (int i = 0; i < pali; i++)
+		}
+		for (int i = 0; i < pali; i++) {
 			newret[i] = palret[i];
-		if (pali < 64)
-			for (int i = pali; i < 64; i++)
+		}
+		if (pali < 64) {
+			for (int i = pali; i < 64; i++) {
 				newret[i] = palret[i%16];
+			}
+		}
 		return palret;
 	}
 
@@ -1000,8 +1037,9 @@ public class PNGto4BPP {
 
 		// fill out the palette by removing empty indices
 		for (int i = 16; i < palret.length; i++) {
-			if (palret[i] == palret[0])
+			if (palret[i] == palret[0]) {
 				palret[i] = palret[i%16];
+			}
 		}
 
 		return palret;
@@ -1087,7 +1125,7 @@ public class PNGto4BPP {
 
 			// find palette index of current pixel
 			for (int s = 0; s < pal.length; s++) {
-				   if (pal[s] == rgb) {
+				if (pal[s] == rgb) {
 					eightbyeight[index][intRow][intCol] = (byte) (s % 16); // mod 16 in case it reads another mail
 					break;
 				}
@@ -1189,8 +1227,9 @@ public class PNGto4BPP {
 		// add palette data, starting at end of sheet
 		int i = 896*32-2;
 		for (byte b : palData) {
-			if (i == bytemap.length)
+			if (i == bytemap.length) {
 				break;
+			}
 			bytemap[i] = b;
 			i++;
 		}
