@@ -211,7 +211,7 @@ public class SpriteAnimator extends Component {
 	private boolean running;
 	private Sprite[][] frames = null;
 	private Timer tick;
-	private static final int MAXSPEED = 5; // maximum speed magnitude
+	private static final int MAXSPEED = 3; // maximum speed magnitude
 	// default initialization
 	public SpriteAnimator() {
 		anime = 0;
@@ -324,6 +324,7 @@ public class SpriteAnimator extends Component {
 	 */
 	public void resetSpeed() {
 		speed = 0;
+		adjustTimer();
 	}
 	
 	/**
@@ -378,7 +379,8 @@ public class SpriteAnimator extends Component {
 	 * Adjusts timer based on speed
 	 */
 	public void adjustTimer() {
-		tick.setDelay(baseSpeed - 16 * speed);
+		double speedMS = baseSpeed * Math.pow(1.5, speed * -1);
+		tick.setDelay((int) speedMS);
 	}
 	/**
 	 * Compares current step speed to maximum speed allowed.
