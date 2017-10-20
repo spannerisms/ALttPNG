@@ -199,7 +199,7 @@ public class SpriteAnimator extends Component {
 	private int frame;
 	private int maxFrame;
 	private boolean running;
-	private BufferedImage[] frames = null;
+	private Sprite[][] frames = null;
 	private Timer tick;
 	private static final int MAXSPEED = 5; // maximum speed magnitude
 	// default initialization
@@ -366,26 +366,33 @@ public class SpriteAnimator extends Component {
 	}
 
 	/**
-	 * Makes an array of Buffered images based on the frame data.
+	 * Makes an array of {@link Sprite}s based on the frame data.
 	 */
 	public void makeAnimationFrames(int[][][] data) {
 		if (img == null)
 			return;
 		maxFrame = data.length;
-		frames = new BufferedImage[maxFrame];
+		frames = new Sprite[maxFrame][];
 		for (int i = 0; i < maxFrame; i++) {
-			frames[i] = img.getSubimage(data[i][0][1], data[i][0][0], data[i][0][2], data[i][0][3]);
+			int frameSpriteCount = data[i].length;
+			frames[i] = new Sprite[frameSpriteCount];
+			for (int j = 0; j < frameSpriteCount; j++) {
+				BufferedImage spreet = img.getSubimage(data[i][j][1], data[i][j][0], data[i][j][2], data[i][j][3]);
+				// TODO: z indexing
+				frames[i][j] = new Sprite(spreet,data[i][j][4],data[i][j][5],j);
+			
+			}
 		}
 	}
-	/*
-	 * Draw controls
+	/**
+	 * Draw every sprite
 	 */
 	public void paint(Graphics g) {
 		if (frames==null || frames[frame] == null)
 			return;
 		Graphics2D g2 = (Graphics2D) g;
-		g2.drawImage(img, 0, 0, null);
-		//g2.drawImage(frames[frame], 0, 0, null);
+		for(Sprite s : frames[frame])
+			s.draw(g2);
 	}
 
 	// error controller
@@ -859,5 +866,30 @@ public class SpriteAnimator extends Component {
 	public static int unsignByte(byte b) {
 		int ret = (b + 256) % 256;
 		return ret;
+	}	
+}
+
+/**
+ * Sprite class to handle drawing better
+ * TODO: z field for when to draw and methods (above) for reordering based on z
+ */
+class Sprite {
+	int x;
+	int y;
+	int z;
+	BufferedImage img;
+	public Sprite(BufferedImage image, int xpos, int ypos, int zindex) {
+		img = image;
+		x = xpos;
+		y = ypos;
+		z = zindex;
+	}
+	
+	/**
+	 * Attaches itself to a {@link Graphics2D} object and draws itself accordingly.
+	 * @param g - Graphics2D object
+	 */
+	public void draw(Graphics2D g) {
+		g.drawImage(img, x, y, null);
 	}
 }
