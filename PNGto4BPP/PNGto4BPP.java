@@ -344,9 +344,9 @@ public class PNGto4BPP {
 		boolean argumentErrorsFound = false;
 
 		for(int i = 0; i < args.length; i++) {
-			//Tokenize arg
+			// Tokenize arg
 			String[] tokens = args[i].split("=");
-			//System.out.println(tokens[0]);
+			// System.out.println(tokens[0]);
 
 			// imgSrc: Full Path for Image
 			// palOption: palFileOption [0:ASCII(.GPL|.PAL), 1:Binary(YY .PAL), 2:Extract from Last Block of PNG]
@@ -1035,12 +1035,10 @@ public class PNGto4BPP {
 		int[] ret = new int[64];
 		for (int i = 0; i < 64; i++) {
 			int pos = (i * 3);
-
 			int r = unsignByte(pal[pos]);
 			int g = unsignByte(pal[pos+1]);
 			int b = unsignByte(pal[pos+2]);
 			ret[i] = (r * 1000000) + (g * 1000) + b;
-			System.out.println(ret[i]);
 		}
 		return ret;
 	}
