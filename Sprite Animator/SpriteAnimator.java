@@ -16,6 +16,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -226,6 +227,18 @@ public class SpriteAnimator extends Component {
 		});
 	}
 
+	public void stop() {
+		running = false;
+		tick.stop();
+	}
+	
+	public int getFrame() {
+		return frame;
+	}
+	
+	public int maxFrame() {
+		return maxFrame();
+	}
 	/**
 	 * Set image to animate.
 	 * @param image
@@ -272,8 +285,7 @@ public class SpriteAnimator extends Component {
 	 * Stops running if we reach the end of the animation in "All frames" mode.
 	 * @return Frame # painted
 	 */
-	public int step() {
-		int ret = frame;
+	public void step() {
 		frame++;
 		if (frame >= maxFrame) {
 			frame = 0;
@@ -281,7 +293,6 @@ public class SpriteAnimator extends Component {
 				setRunning(false);
 		}
 		repaint();
-		return ret;
 	}
 
 	/**
@@ -372,6 +383,7 @@ public class SpriteAnimator extends Component {
 		return speed == (-1 * MAXSPEED);
 	}
 
+	// @link Sprite - lol get it?
 	/**
 	 * Makes an array of {@link Sprite}s based on the frame data.
 	 */
@@ -506,14 +518,12 @@ public class SpriteAnimator extends Component {
 		final JFrame frame = new JFrame("Sprite animator");
 		final Dimension d = new Dimension(600,282);
 		final JTextField fileName = new JTextField("");
-		final JButton fileNameBtn = new JButton("SPR file");
 		final JButton loadBtn = new JButton("Load file");
 		final JButton stepBtn = new JButton("Step");
 		final JButton fasterBtn = new JButton("Speed+");
 		final JButton slowerBtn = new JButton("Speed-");
 		final JButton resetBtn = new JButton("Reset");
 		final JPanel loadWrap = new JPanel(new BorderLayout());
-		final JPanel btnWrap = new JPanel(new BorderLayout());
 		final JPanel controls = new JPanel(new BorderLayout());
 		final JPanel controls1 = new JPanel(new BorderLayout());
 		final JPanel controls2 = new JPanel(new BorderLayout());
@@ -527,18 +537,26 @@ public class SpriteAnimator extends Component {
 		controls.add(controls1,BorderLayout.NORTH);
 		controls.add(controls2,BorderLayout.SOUTH);
 
+		final JPanel bottomStuffWrap = new JPanel(new BorderLayout());
 		final JPanel bottomStuff = new JPanel(new BorderLayout());
 		stepBtn.setEnabled(false);
 
 		final SpriteAnimator imageArea = new SpriteAnimator();
 		final SpriteAnimator run = imageArea; // just a shorter name
-		final Timer tock = run.getTimer();
+
 		bottomStuff.add(imageArea,BorderLayout.CENTER);
 		bottomStuff.add(controls,BorderLayout.EAST);
 		
-		btnWrap.add(fileNameBtn,BorderLayout.WEST);
-		btnWrap.add(loadBtn,BorderLayout.EAST);
-		loadWrap.add(btnWrap,BorderLayout.EAST);
+		final JPanel frameCounter = new JPanel(new BorderLayout());
+		final JLabel frameWord = new JLabel("Frame:");
+		final JLabel frameCur = new JLabel("0");
+		frameCur.setVerticalAlignment(JLabel.EAST);
+		frameCounter.add(frameWord,BorderLayout.WEST);
+		//frameCounter.add(frameCur,BorderLayout.CENTER);
+		frameCounter.add(frameCur,BorderLayout.EAST);
+		bottomStuff.add(frameCounter,BorderLayout.SOUTH);
+		bottomStuffWrap.add(bottomStuff,BorderLayout.EAST);
+		loadWrap.add(loadBtn,BorderLayout.EAST);
 		loadWrap.add(fileName,BorderLayout.CENTER);
 
 		// Credits
@@ -576,10 +594,11 @@ public class SpriteAnimator extends Component {
 				aboutFrame.setVisible(true);
 			}});
 		aboutFrame.setSize(600,300);
+		aboutFrame.setLocation(150,150);
 		aboutFrame.setResizable(false);
 		// end credits
 
-		frame.add(bottomStuff, BorderLayout.CENTER);
+		frame.add(bottomStuffWrap, BorderLayout.CENTER);
 		frame.add(loadWrap,BorderLayout.NORTH);
 		frame.setSize(d);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -595,12 +614,18 @@ public class SpriteAnimator extends Component {
 		// have to set a blank file instead
 		final File EEE = new File("");
 
+		Timer tock = run.getTimer();
+		tock.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				frameCur.setText("" + run.getFrame());
+			}
+		});
 		// load sprite file
-		fileNameBtn.addActionListener(new ActionListener() {
+		loadBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(sprFilter);
-				explorer.showOpenDialog(fileNameBtn);
+				explorer.showOpenDialog(loadBtn);
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
@@ -611,11 +636,7 @@ public class SpriteAnimator extends Component {
 						fileName.setText(n);
 				}
 				explorer.removeChoosableFileFilter(sprFilter);
-			}});
-		
-		// turn sprite into png
-		loadBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
+
 				byte[] sprite;
 				try {
 					sprite = readSprite(fileName.getText());
