@@ -544,7 +544,7 @@ public class SpriteAnimator extends Component {
 		final SpriteAnimator imageArea = new SpriteAnimator();
 		final SpriteAnimator run = imageArea; // just a shorter name
 
-		bottomStuff.add(imageArea,BorderLayout.CENTER);
+		bottomStuffWrap.add(imageArea,BorderLayout.CENTER);
 		bottomStuff.add(controls,BorderLayout.EAST);
 		
 		final JPanel frameCounter = new JPanel(new BorderLayout());
@@ -552,7 +552,6 @@ public class SpriteAnimator extends Component {
 		final JLabel frameCur = new JLabel("0");
 		frameCur.setVerticalAlignment(JLabel.EAST);
 		frameCounter.add(frameWord,BorderLayout.WEST);
-		//frameCounter.add(frameCur,BorderLayout.CENTER);
 		frameCounter.add(frameCur,BorderLayout.EAST);
 		bottomStuff.add(frameCounter,BorderLayout.SOUTH);
 		bottomStuffWrap.add(bottomStuff,BorderLayout.EAST);
@@ -625,7 +624,9 @@ public class SpriteAnimator extends Component {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(sprFilter);
-				explorer.showOpenDialog(loadBtn);
+				int option = explorer.showOpenDialog(loadBtn);
+				if (option == JFileChooser.CANCEL_OPTION)
+					return;
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
@@ -634,6 +635,8 @@ public class SpriteAnimator extends Component {
 				} finally {
 					if (testFileType(n,"spr"))
 						fileName.setText(n);
+					else
+						return;
 				}
 				explorer.removeChoosableFileFilter(sprFilter);
 
@@ -816,14 +819,6 @@ public class SpriteAnimator extends Component {
 			ret[i][0] = (byte) (((color >> 0) & 0x1F) << 3);
 			ret[i][1] = (byte) (((color >> 5) & 0x1F) << 3);
 			ret[i][2] = (byte) (((color >> 10) & 0x1F) << 3);
-
-			System.out.println(
-					((ret[i][0]+256)%256)
-					+ " " +
-					((ret[i][1]+256)%256)
-					+ " " +
-					((ret[i][2]+256)%256)
-							);
 		}
 
 		// make black;
