@@ -88,7 +88,7 @@ public class SpriteAnimator extends Component {
 	 *		UM : Mirror along both axes
 	 */
 	static final String[] ALLFRAMES = {
-			/* stand */ "TO BE DONE", // A0:B0
+			/* stand */ "A0{0,6}{F}{0}:B0{0,16}{F}{0}", // A0:B0
 			/* standUp */ "TO BE DONE", // A2:C1
 			/* standDown */ "TO BE DONE", // A1:B3
 			/* walk */ "TO BE DONE", // A0:B0,A0:B1,K3:B2,K4:Q7,A0:S4,A0:R6,K3:R7,K4:S3
@@ -399,7 +399,6 @@ public class SpriteAnimator extends Component {
 				int xpos = Integer.parseInt(pos[0]);
 				int ypos = Integer.parseInt(pos[1]);
 				int drawY = ALPHA.indexOf(sprIndex[0]) * 16;
-				System.out.println(sprIndex[0] + " " + sprIndex[0]);
 				int drawX = Integer.parseInt((sprIndex[1] + "")) * 16;
 				int drawYoffset, drawXoffset, width, height;
 				
@@ -479,8 +478,8 @@ public class SpriteAnimator extends Component {
 	public void paint(Graphics g) {
 		if (frames==null || frames[frame] == null)
 			return;
-		System.out.println(frame + " " + maxFrame);
 		Graphics2D g2 = (Graphics2D) g;
+		g2.scale(3.0, 3.0);
 		for(Sprite s : frames[frame])
 			s.draw(g2);
 	}
@@ -980,6 +979,6 @@ class Sprite {
 	 * @param g - Graphics2D object
 	 */
 	public void draw(Graphics2D g) {
-		g.drawImage(img, x, y, null);
+		g.drawImage(img, x + 10, y + 10, null);
 	}
 }
