@@ -154,6 +154,8 @@ public class SpriteFilter {
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(sprFilter);
 				int option = explorer.showOpenDialog(fileNameBtn);
+				explorer.removeChoosableFileFilter(sprFilter);
+
 				if (option == JFileChooser.CANCEL_OPTION)
 					return;
 				String n = "";
@@ -165,7 +167,6 @@ public class SpriteFilter {
 					if (testFileType(n,"spr"))
 						fileName.setText(n);
 				}
-				explorer.removeChoosableFileFilter(sprFilter);
 			}});
 		goBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
