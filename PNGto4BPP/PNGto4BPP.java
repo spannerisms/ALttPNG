@@ -48,7 +48,7 @@ public class PNGto4BPP {
 	static final JTextField imageName = new JTextField("");
 	static final JTextField palName = new JTextField("");
 	static final JTextField fileName = new JTextField("");
-// palette reading methods
+	// palette reading methods
 	static String[] palChoices = {
 				"Read ASCII (" + join(PALETTEEXTS,", ") +")",
 				"Binary (YY .PAL)",
@@ -1034,20 +1034,12 @@ public class PNGto4BPP {
 	public static int[] palFromBinary(byte[] pal) {
 		int[] ret = new int[64];
 		for (int i = 0; i < 64; i++) {
-			short color = 0;
-			int pos = (i * 2) + 4;
-			color = (short) unsignByte(pal[pos+1]);
-			color <<= 8;
-			color |= (short) unsignByte(pal[pos]);
-			
-			byte r = (byte) (((color >> 0) & 0x1F) << 3);
-			byte g= (byte) (((color >> 5) & 0x1F) << 3);
-			byte b = (byte) (((color >> 10) & 0x1F) << 3);
+			int pos = (i * 3);
 
-			int r2 = unsignByte(r);
-			int g2 = unsignByte(g);
-			int b2 = unsignByte(b);
-			ret[i] = (r2 * 1000000) + (g2 * 1000) + b2;
+			int r = unsignByte(pal[pos]);
+			int g = unsignByte(pal[pos+1]);
+			int b = unsignByte(pal[pos+2]);
+			ret[i] = (r * 1000000) + (g * 1000) + b;
 			System.out.println(ret[i]);
 		}
 		return ret;
