@@ -770,6 +770,7 @@ public class SpriteAnimator extends Component {
 	public void setMode(int m) {
 		mode = m;
 		reset();
+		repaint();
 	}
 	
 	/**
@@ -1177,12 +1178,29 @@ public class SpriteAnimator extends Component {
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
+				try {
+					run.setAnimation(0);
+					animOptions.setSelectedIndex(0);
+				} catch(Exception e) {
+						
+				}
 			}});
 		
 		// 
 		animOptions.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				run.setAnimation(animOptions.getSelectedIndex());
+				try {
+					run.setAnimation(animOptions.getSelectedIndex());
+				} catch(Exception e) {
+					run.setAnimation(0);
+					animOptions.setSelectedIndex(0);
+					JOptionPane.showMessageDialog(frame,
+							"This animation caused a problem.",
+							"OH NO",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				run.reset();
 			}});
 		
 		modeOptions.addActionListener(new ActionListener() {
