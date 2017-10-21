@@ -102,7 +102,7 @@ public class PNGto4BPP {
 		// buttons
 		final JButton imageBtn = new JButton("PNG file");
 		final JButton palBtn = new JButton("Pal file");
-		final JButton fileNameBtn = new JButton("Save/Patch");
+		final JButton fileNameBtn = new JButton("Save/Patch to...");
 		final JButton runBtn = new JButton("Convert");
 		final JButton clrLog = new JButton("Clear");
 		final JButton expLog = new JButton("Export");
