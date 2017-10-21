@@ -149,11 +149,14 @@ public class PNGto4BPP {
 		frame.setJMenuBar(menu);
 		// file explorer
 		final JFileChooser explorer = new JFileChooser();
+
+		explorer.setCurrentDirectory(new File(".")); // quick way to set to current .jar loc
+
 		// set filters
 		FileNameExtensionFilter imgFilter =
 				new FileNameExtensionFilter("PNG files", IMAGEEXTS);
 		FileNameExtensionFilter palFilter =
-				new FileNameExtensionFilter("Palette files (" + join(PALETTEEXTS,", ") +")",
+				new FileNameExtensionFilter("Palette files (" +join(PALETTEEXTS,", ") +")",
 						PALETTEEXTS);
 		FileNameExtensionFilter binPalFilter =
 				new FileNameExtensionFilter("YY-CHR palettes", BINARYEXTS);
@@ -246,7 +249,7 @@ public class PNGto4BPP {
 						return;
 					}
 				}
-				
+
 				PrintWriter logBugs;
 				try {
 					logBugs = new PrintWriter(n);
@@ -671,7 +674,6 @@ public class PNGto4BPP {
 		}
 
 		// binary (YY-CHR) pal
-		// TODO: this
 		if (palChoice == 1) {
 			if (!testFileType(paletteName, "pal")) {
 				JOptionPane.showMessageDialog(frame,
@@ -1243,7 +1245,7 @@ public class PNGto4BPP {
 		int ret = ((b + 256) % 256);
 		return ret;
 	}
-	
+
 	public static void removeFilters(JFileChooser ex) {
 		FileFilter[] exlist = ex.getChoosableFileFilters();
 		for (FileFilter r : exlist)
@@ -1252,7 +1254,7 @@ public class PNGto4BPP {
 	// errors
 
 	/**
-	 *  Palette has <16 colors
+	 * Palette has <16 colors
 	 */
 	public class ShortPaletteException extends Exception {
 		private static final long serialVersionUID = 1L;
@@ -1264,7 +1266,7 @@ public class PNGto4BPP {
 	}
 
 	/**
-	 *  Image is wrong dimensions
+	 * Image is wrong dimensions
 	 */
 	public class BadDimensionsException extends Exception {
 		private static final long serialVersionUID = 1L;
