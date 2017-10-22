@@ -1,3 +1,5 @@
+package PNGto4BPP;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.TextArea;
@@ -55,7 +57,7 @@ public class PNGto4BPP {
 	// palette reading methods
 	static String[] palChoices = {
 				"Read ASCII (" + join(PALETTEEXTS,", ") +")",
-				"Binary (YY .PAL)",
+				"Binary (YY-CHR .PAL)",
 				"Extract from last block of PNG"
 				};
 	static final JComboBox<String> palOptions = new JComboBox<String>(palChoices);
@@ -67,10 +69,10 @@ public class PNGto4BPP {
 	// Summary
 	// Command Line Usage:
 	// imgSrc: Full Path for Image
-	// palMethod: palFileMethod [0:ASCII(.GPL|.PAL), 1:Binary(YY .PAL), 2:Extract from Last Block of PNG]
-	// palSrc:(Used if Method 0 or 1 selected): Full Path for Pal File.
+	// palMethod: palFileMethod [0:ASCII(.GPL|.PAL|.TXT), 1:Binary(YY-CHR .PAL), 2:Extract from Last Block of PNG]
+	// palSrc:(Used if Method 0 or 1 selected): Full Path for Palette File.
 	// sprTarget(optional): Name of Sprite that will be created. Will default to name of imgSrc with new extension. 
-	// romTarget(optional): Path of Rom to patch.
+	// romTarget(optional): Path of ROM to patch.
 
 	// main and stuff
 	public static void main(String[] args) {
@@ -100,13 +102,13 @@ public class PNGto4BPP {
 		final TextArea debugLog = new TextArea("Debug log:",0,0,TextArea.SCROLLBARS_VERTICAL_ONLY);
 		debugLog.setEditable(false);
 		// buttons
-		final JButton imageBtn = new JButton("PNG file");
-		final JButton palBtn = new JButton("Pal file");
+		final JButton imageBtn = new JButton("Load PNG");
+		final JButton palBtn = new JButton("Load Palette");
 		final JButton fileNameBtn = new JButton("Save/Patch to...");
-		final JButton runBtn = new JButton("Convert");
+		final JButton runBtn = new JButton("Convert!");
 		final JButton clrLog = new JButton("Clear");
 		final JButton expLog = new JButton("Export");
-		// acknowledgements
+		// Acknowledgments
 		final JMenuItem peeps = new JMenuItem("About");
 		final TextArea peepsList = new TextArea("", 0,0,TextArea.SCROLLBARS_VERTICAL_ONLY);
 		peepsList.setEditable(false);
@@ -161,7 +163,7 @@ public class PNGto4BPP {
 		FileNameExtensionFilter binPalFilter =
 				new FileNameExtensionFilter("YY-CHR palettes", BINARYEXTS);
 		FileNameExtensionFilter sprFilter =
-				new FileNameExtensionFilter("Sprite files", SPREXTS);
+				new FileNameExtensionFilter("ALttP Sprite files", SPREXTS);
 		FileNameExtensionFilter romFilter =
 				new FileNameExtensionFilter("ROM files", ROMEXTS);
 		FileNameExtensionFilter logFilter =
@@ -229,12 +231,13 @@ public class PNGto4BPP {
 		// export log to a text file
 		expLog.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				removeFilters(explorer);
 				explorer.setSelectedFile(new File("error log (" + System.currentTimeMillis() + ").txt"));
 				explorer.setFileFilter(logFilter);
 				int option = explorer.showSaveDialog(expLog);
-				removeFilters(explorer);
-				if (option == JFileChooser.CANCEL_OPTION)
+				if (option == JFileChooser.CANCEL_OPTION) {
 					return;
+				}
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
@@ -271,64 +274,72 @@ public class PNGto4BPP {
 		// image button
 		imageBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				removeFilters(explorer);
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(imgFilter);
 				int option = explorer.showOpenDialog(imageBtn);
-				removeFilters(explorer);
-				if (option == JFileChooser.CANCEL_OPTION)
+				if (option == JFileChooser.CANCEL_OPTION) {
 					return;
+				}
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
 				} catch (NullPointerException e) {
 					// do nothing
 				} finally {
-					if (testFileType(n,IMAGEEXTS))
+					if (testFileType(n,IMAGEEXTS)) {
 						imageName.setText(n);
+					}
 				}
 			}});
 
 		// palette button
 		palBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				explorer.setSelectedFile(EEE);
-				if (palOptions.getSelectedIndex() == 1)
-					explorer.setFileFilter(binPalFilter);
-				else
-					explorer.setFileFilter(palFilter);
-				int option = explorer.showOpenDialog(palBtn);
 				removeFilters(explorer);
-				if (option == JFileChooser.CANCEL_OPTION)
+				explorer.setSelectedFile(EEE);
+				if (palOptions.getSelectedIndex() == 1) {
+					explorer.setFileFilter(binPalFilter);
+				}
+				else {
+					explorer.setFileFilter(palFilter);
+				}
+				int option = explorer.showOpenDialog(palBtn);
+				if (option == JFileChooser.CANCEL_OPTION) {
 					return;
+				}
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
 				} catch (NullPointerException e) {
 					// do nothing
 				} finally {
-					if (testFileType(n,PALETTEEXTS))
+					if (testFileType(n,PALETTEEXTS)) {
 						palName.setText(n);
+					}
 				}
 			}});
 
 		// file name button
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				removeFilters(explorer);
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(sprFilter);
 				explorer.addChoosableFileFilter(romFilter);
 				int option = explorer.showOpenDialog(fileNameBtn);
-				removeFilters(explorer);
-				if (option == JFileChooser.CANCEL_OPTION)
+				if (option == JFileChooser.CANCEL_OPTION) {
 					return;
+				}
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
 				} catch (NullPointerException e) {
 					// do nothing
 				} finally {
-					if (testFileType(n,EXPORTEXTS))
+					if (testFileType(n,EXPORTEXTS)) {
 						fileName.setText(n);
+					}
 				}
 			}});
 
@@ -338,7 +349,7 @@ public class PNGto4BPP {
 				ConvertPngToSprite(false);	
 			}});
 
-		//If arguments are greater than 1, then we have the neccesary arguemnts to do command line processing.
+		//If arguments are greater than 1, then we have the necessary arguments to do command line processing.
 		if(args.length > 1) {
 			//If we encountered no errors processing the arguments, then convert and end program.
 			if(ProcessArgs(args)) {
@@ -354,10 +365,11 @@ public class PNGto4BPP {
 
 // Summary
 	// ProcessArgs checks if the arguments are valid, and if so, sets the TextFields and ComboBox with the values from the passed arguments.
-	// Returns True if arguments were processed successfuly. False if not. 
+	// Returns True if arguments were processed successfully. False if not. 
 	public static boolean ProcessArgs(String[] args) {		
-		if(args.length < 2 || args.length > 5)
+		if(args.length < 2 || args.length > 5) {
 			return false;
+		}
 		String imgSrc= "";
 		String palSrc = "";
 		String sprTarget = "";
@@ -366,12 +378,12 @@ public class PNGto4BPP {
 		boolean argumentErrorsFound = false;
 
 		for(int i = 0; i < args.length; i++) {
-			// Tokenize arg
+			// Tokenize argument
 			String[] tokens = args[i].split("=");
 			// System.out.println(tokens[0]);
 
 			// imgSrc: Full Path for Image
-			// palOption: palFileOption [0:ASCII(.GPL|.PAL), 1:Binary(YY .PAL), 2:Extract from Last Block of PNG]
+			// palOption: palFileOption [0:ASCII(.GPL|.PAL|.TXT), 1:Binary(YY-CHR .PAL), 2:Extract from Last Block of PNG]
 			// palSrc:(Used if Option 0 or 1 selected) Full Path for Pal File.
 			// sprTarget: Name of Sprite that will be created.
 			if(tokens.length == 2) {
@@ -416,8 +428,9 @@ public class PNGto4BPP {
 			}			
 		} //End of For Loops				
 
-		if(argumentErrorsFound)
+		if(argumentErrorsFound) {
 			return false;
+		}
 
 		// Ensure imgSrc exists
 		if(imgSrc == "") {
@@ -468,7 +481,7 @@ public class PNGto4BPP {
 	}
 
 	public static void patchRom(byte[] spr, String romTarget) throws IOException, FileNotFoundException {
-		// Acquire rom data
+		// Acquire ROM data
 		byte[] rom_patch;
 		FileInputStream fsInput = new FileInputStream(romTarget);
 		rom_patch = new byte[(int) fsInput.getChannel().size()];
@@ -476,7 +489,7 @@ public class PNGto4BPP {
 		fsInput.getChannel().position(0);
 		fsInput.close();
 
-		// filestream save .spr file to rom
+		// filestream save .spr file to ROM
 		FileOutputStream fsOut = new FileOutputStream(romTarget);
 
 		for(int i = 0;i<0x7000;i++) {
@@ -512,8 +525,9 @@ public class PNGto4BPP {
 
 	public static boolean ConvertPngToSprite(boolean ignoreSuccessMessage) {
 		byte[] rando = new byte[16];
-		for (int i = 0; i < rando.length; i++) // initialize rando with -1 to prevent static in the trans areas
+		for (int i = 0; i < rando.length; i++) { // initialize rando with -1 to prevent static in the trans areas
 			rando[i] = -1;
+		}
 		BufferedImage img;
 		BufferedImage imgRead;
 		byte[] pixels;
@@ -538,11 +552,20 @@ public class PNGto4BPP {
 
 		// test palette type
 		if (!testFileType(paletteName,PALETTEEXTS) && (palChoice != 2)) {
-			JOptionPane.showMessageDialog(frame,
-					"Palettes must be of the following extensions:\n" + join(PALETTEEXTS,", "),
-					"Oops",
-					JOptionPane.WARNING_MESSAGE);
-			extensionERR = true;
+			if(paletteName.length() == 0) {
+				JOptionPane.showMessageDialog(frame,
+						"No Palette source was specified despite using a palette method that requires it",
+						"Oops",
+						JOptionPane.WARNING_MESSAGE);
+				extensionERR = true;
+			}
+			else {
+				JOptionPane.showMessageDialog(frame,
+						"Palettes must be of the following extensions:\n" + join(PALETTEEXTS,", "),
+						"Oops",
+						JOptionPane.WARNING_MESSAGE);
+				extensionERR = true;
+			}
 		}
 
 		// save location
@@ -555,13 +578,16 @@ public class PNGto4BPP {
 			String HEX = "0123456789ABCDEF";
 			for (int i = 0; i < HEX.length(); i++) {
 				char a = HEX.charAt(i);
-				if (loc.indexOf(a) != -1)
+				if (loc.indexOf(a) != -1) {
 					bamboozarino[i] = true;
+				}
 			}
 
-			for (int i = 0; i < bamboozarino.length; i++)
-				if (bamboozarino[i])
+			for (int i = 0; i < bamboozarino.length; i++) {
+				if (bamboozarino[i]) {
 					rando[i] = (byte) i;
+				}
+			}
 			loc = "";
 		}
 
@@ -579,8 +605,9 @@ public class PNGto4BPP {
 		}
 
 		// sfc means we're patching a ROM
-		if (testFileType(loc,"sfc"))
+		if (testFileType(loc,"sfc")) {
 			patchingROM = true;
+		}
 
 		// only allow sprite/ROM files
 		if (!testFileType(loc,EXPORTEXTS)) {
@@ -650,10 +677,12 @@ public class PNGto4BPP {
 			// palette parsing
 			try {
 				// test file type to determine format
-				if (testFileType(paletteName, "txt"))
+				if (testFileType(paletteName, "txt")) {
 					palette = getPaletteColorsFromPaintNET(br);
-				else
+				}
+				else {
 					palette = getPaletteColorsFromFile(br);
+				}
 				palette = roundPalette(palette);
 				palData = palDataFromArray(palette);
 			} catch (NumberFormatException|IOException e) {
@@ -700,8 +729,9 @@ public class PNGto4BPP {
 		// make the file
 		try {
 			// only try to make a file if we're making a new sprite
-			if (!patchingROM)
+			if (!patchingROM) {
 				new File(loc);
+			}
 		} catch (NullPointerException e) {
 			JOptionPane.showMessageDialog(frame,
 					"Invalid file name",
@@ -717,10 +747,12 @@ public class PNGto4BPP {
 
 		// write data to SPR file
 		try {
-			if (patchingROM)
+			if (patchingROM) {
 				patchRom(SNESdata, loc);
-			else
+			}
+			else {
 				writeSPR(SNESdata, loc);
+			}
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(frame,
 					"Error writing sprite",
@@ -794,8 +826,9 @@ public class PNGto4BPP {
 		String ret = "";
 		for (int i = 0; i < s.length; i++) {
 			ret += s[i];
-			if (i != s.length-1)
+			if (i != s.length-1) {
 				ret += c;
+			}
 		}
 		return ret;
 	}
@@ -822,8 +855,9 @@ public class PNGto4BPP {
 	public static byte[] getImageRaster(BufferedImage img) throws BadDimensionsException {
 		int w = img.getWidth();
 		int h = img.getHeight();
-		if (w != 128 || h != 448)
+		if (w != 128 || h != 448) {
 			throw controller.new BadDimensionsException("Invalid dimensions of {" + w + "," + h + "}");
+		}
 		byte[] pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
 		return pixels;
 	}
@@ -894,8 +928,9 @@ public class PNGto4BPP {
 						colorArray[colori] = curCol;
 						colori++;
 					}
-					if (colori == 3)
+					if (colori == 3) {
 						break;
+					}
 				}
 				// read RGB bytes as ints
 				int r = colorArray[0];
@@ -904,22 +939,28 @@ public class PNGto4BPP {
 				palret[pali] = (r * 1000000) + (g * 1000) + b; // add to palette as RRRGGGBBB
 				pali++; // increment palette index
 			}
-			if (pali == 64)
+			if (pali == 64) {
 				break;
+			}
 		}
 		// short palettes throw an error
-		if (pali < 16 )
+		if (pali < 16 ) {
 			throw controller.new ShortPaletteException("Only " + pali + " colors were found.");
+		}
 		// truncate long palettes
 		int[] newret = new int[64];
 		pali = 16 * (pali / 16);
-		if (pali > 64)
+		if (pali > 64) {
 			pali = 64;
-		for (int i = 0; i < pali; i++)
+		}
+		for (int i = 0; i < pali; i++) {
 			newret[i] = palret[i];
-		if (pali < 64)
-			for (int i = pali; i < 64; i++)
+		}
+		if (pali < 64) {
+			for (int i = pali; i < 64; i++) {
 				newret[i] = palret[i%16];
+			}
+		}
 		return newret;
 	}
 
@@ -955,22 +996,28 @@ public class PNGto4BPP {
 				palret[pali] = (r * 1000000) + (g * 1000) + b; // add to palette as RRRGGGBBB
 				pali++; // increment palette index
 			}
-			if (pali == 64)
+			if (pali == 64) {
 				break;
+			}
 		}
 		// Paint.NET forces 96 colors, but put this here just in case
-		if (pali < 16 )
+		if (pali < 16 ) {
 			throw controller.new ShortPaletteException("Only " + pali + " colors were found.");
+		}
 		// truncate long palettes
 		int[] newret = new int[64];
 		pali = 16 * (pali / 16);
-		if (pali > 64)
+		if (pali > 64) {
 			pali = 64;
-		for (int i = 0; i < pali; i++)
+		}
+		for (int i = 0; i < pali; i++) {
 			newret[i] = palret[i];
-		if (pali < 64)
-			for (int i = pali; i < 64; i++)
+		}
+		if (pali < 64) {
+			for (int i = pali; i < 64; i++) {
 				newret[i] = palret[i%16];
+			}
+		}
 		return palret;
 	}
 
@@ -1046,7 +1093,7 @@ public class PNGto4BPP {
 
 	/**
 	 * Create binary palette data for appending to the end of the <tt>.spr</tt> file.
-	 * @param pal - <b>int[]</b> containined the palette colors as RRRGGGBBB
+	 * @param pal - <b>int[]</b> contained the palette colors as RRRGGGBBB
 	 * @return <b>byte[]<b> containing palette data in 5:5:5 format
 	 */
 	public static byte[] palDataFromArray(int[] pal) {
@@ -1167,7 +1214,7 @@ public class PNGto4BPP {
 			}
 		}
 
-		// format of snes 4bpp {row (r), bit plane (b)}
+		// format of SNES 4bpp {row (r), bit plane (b)}
 		// bit plane 0 indexed such that 1011 corresponds to 0123
 		int bppi[][] = {
 				{0,0},{0,1},{1,0},{1,1},{2,0},{2,1},{3,0},{3,1},
@@ -1216,8 +1263,9 @@ public class PNGto4BPP {
 		// add palette data, starting at end of sheet
 		int i = 896*32-2;
 		for (byte b : palData) {
-			if (i == bytemap.length)
+			if (i == bytemap.length) {
 				break;
+			}
 			bytemap[i] = b;
 			i++;
 		}
@@ -1248,8 +1296,9 @@ public class PNGto4BPP {
 
 	public static void removeFilters(JFileChooser ex) {
 		FileFilter[] exlist = ex.getChoosableFileFilters();
-		for (FileFilter r : exlist)
+		for (FileFilter r : exlist) {
 			ex.removeChoosableFileFilter(r);
+		}
 	}
 	// errors
 
