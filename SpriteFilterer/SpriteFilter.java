@@ -1,3 +1,5 @@
+package SpriteFilter;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -95,19 +97,20 @@ public class SpriteFilter {
 			} //end System
 		} // end Nimbus
 
-		final JFrame frame = new JFrame("Sprite filtering");
+		final JFrame frame = new JFrame("Sprite Filter");
 		final Dimension d = new Dimension(600,382);
 		final JTextField fileName = new JTextField("");
 		final JTextField flags = new JTextField();
-		final JButton fileNameBtn = new JButton("SPR file");
-		final JButton goBtn = new JButton("Apply");
+		final JButton fileNameBtn = new JButton("Load SPR file");
+		final JButton goBtn = new JButton("Apply Filter!");
 		final JLabel optlbl = new JLabel("   Flag and filter   ");
 
 		String[] filterNames = new String[FILTERS.length];
-		for (int i = 0; i < filterNames.length; i++)
+		for (int i = 0; i < filterNames.length; i++) {
 			filterNames[i] = FILTERS[i][0];
+		}
 		FileNameExtensionFilter sprFilter =
-				new FileNameExtensionFilter("Sprite files", new String[] { "spr" });
+				new FileNameExtensionFilter("ALttP Sprite files", new String[] { "spr" });
 		final JComboBox<String> options = new JComboBox<String>(filterNames);
 		final JPanel frame2 = new JPanel(new BorderLayout());
 		final JPanel imgWrap = new JPanel(new BorderLayout());
@@ -145,19 +148,20 @@ public class SpriteFilter {
 				int option = options.getSelectedIndex();
 				String filterText = FILTERS[option][1];
 				String flagText = FILTERS[option][2];
-				if (flagText == null)
+				if (flagText == null) {
 					flagText = "No flag options available for this filter.";
+				}
 				flagTextInfo.setText(filterText + "\n" + flagText);
 			}});
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				explorer.removeChoosableFileFilter(sprFilter);
 				explorer.setSelectedFile(EEE);
 				explorer.setFileFilter(sprFilter);
 				int option = explorer.showOpenDialog(fileNameBtn);
-				explorer.removeChoosableFileFilter(sprFilter);
-
-				if (option == JFileChooser.CANCEL_OPTION)
+				if (option == JFileChooser.CANCEL_OPTION) {
 					return;
+				}
 				String n = "";
 				try {
 					n = explorer.getSelectedFile().getPath();
@@ -167,6 +171,7 @@ public class SpriteFilter {
 					if (testFileType(n,"spr"))
 						fileName.setText(n);
 				}
+				explorer.removeChoosableFileFilter(sprFilter);
 			}});
 		goBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -249,8 +254,9 @@ public class SpriteFilter {
 			// find interlacing index
 			g = i%32;
 			// increment at 0th index
-			if (g == 0)
+			if (g == 0) {
 				b++;
+			}
 			// row to look at
 			int r = BPPI[g][0];
 			// bit plane of byte
@@ -264,8 +270,9 @@ public class SpriteFilter {
 				// AND with 1 shifted to the correct plane
 				boolean bitOn = (q & (1 << (7-c))) != 0;
 				// if true, OR with that plane in index map
-				if (bitOn)
+				if (bitOn) {
 					ret[b][r][c] |= (1 << (p));
+				}
 			}
 		}
 		return ret;
@@ -277,8 +284,9 @@ public class SpriteFilter {
 	public static byte[] getPalette(byte[] sprite) {
 		byte[] pal = new byte[PALETTESIZE];
 		int offset = SPRITESIZE;
-		for (int i = 0; i < PALETTESIZE; i++)
+		for (int i = 0; i < PALETTESIZE; i++) {
 			pal[i] = sprite[offset+i];
+		}
 		return pal;
 	}
 
@@ -354,19 +362,26 @@ public class SpriteFilter {
 		// default to all but trans pixel
 		// find which hex numbers exist in flags
 		boolean[] randomize = new boolean[16];
-		for (int i = 0; i < HEX.length(); i++)
-			if (f.indexOf(HEX.charAt(i)) != -1)
+		for (int i = 0; i < HEX.length(); i++) {
+			if (f.indexOf(HEX.charAt(i)) != -1) {
 				randomize[i] = true;
-		if (inversed)
-			for (int i = 0; i < randomize.length; i++)
+			}
+		}
+		if (inversed) {
+			for (int i = 0; i < randomize.length; i++) {
 				randomize[i] = !randomize[i];
+			}
+		}
 
-		for (int i = 0; i < img.length; i++)
-			for (int j = 0; j < img[0].length; j++)
+		for (int i = 0; i < img.length; i++) {
+			for (int j = 0; j < img[0].length; j++) {
 				for (int k = 0; k < img[0][0].length; k++) {
-					if (randomize[img[i][j][k]] == true)
+					if (randomize[img[i][j][k]] == true) {
 						img[i][j][k] = (byte) (Math.random() * 16);
+					}
 				}
+			}
+		}
 		return img;
 	}
 
@@ -375,12 +390,15 @@ public class SpriteFilter {
 	 * Ignores trans pixels
 	 */
 	public static byte[][][] swapFilter(byte[][][] img) {
-		for (int i = 0; i < img.length; i++)
-			for (int j = 0; j < img[0].length; j++)
+		for (int i = 0; i < img.length; i++) {
+			for (int j = 0; j < img[0].length; j++) {
 				for (int k = 0; k < img[0][0].length; k++) {
-					if (img[i][j][k] != 0)
+					if (img[i][j][k] != 0) {
 						img[i][j][k] = (byte) (16 - img[i][j][k]);
+					}
 				}
+			}
+		}
 		return img;
 	}
 
@@ -388,21 +406,27 @@ public class SpriteFilter {
 	 * Shifts rows by 1 to the left or right, alternating
 	 */
 	public static byte[][][] lineShiftFilter(byte[][][] img) {
-		for (int i = 0; i < img.length; i++)
-			for (int j = 0; j < img[0].length; j++)
+		for (int i = 0; i < img.length; i++) {
+			for (int j = 0; j < img[0].length; j++) {
 				for (int k = 0; k < img[0][0].length; k++) {
 					if (j % 2 == 0) {
-						if (k != 7)
+						if (k != 7) {
 							img[i][j][7-k] = img[i][j][6-k];
-						else
+						}
+						else {
 							img[i][j][7-k] = 0;
+						}
 					} else {
-						if (k != 7)
+						if (k != 7) {
 							img[i][j][k] = img[i][j][k+1];
-						else
+						}
+						else {
 							img[i][j][k] = 0;
+						}
 					}
 				}
+			}
+		}
 		return img;
 	}
 
@@ -419,12 +443,15 @@ public class SpriteFilter {
 		} catch (NumberFormatException e) {
 			// do nothing
 		}
-		for (int i = 0; i < img.length; i++)
-			for (int j = 0; j < img[0].length; j++)
+		for (int i = 0; i < img.length; i++) {
+			for (int j = 0; j < img[0].length; j++) {
 				for (int k = 0; k < img[0][0].length; k++) {
-					if (img[i][j][k] != 0)
+					if (img[i][j][k] != 0) {
 						img[i][j][k] = (byte) ((img[i][j][k] + wrap) % 16);
+					}
 				}
+			}
+		}
 		return img;
 	}
 
@@ -437,8 +464,9 @@ public class SpriteFilter {
 		for (int i = 0; i < img.length; i++) {
 			// copy array, .clone() is stupid
 			for (int i2 = 0; i2 < copy.length; i2++) {
-				for (int j2 = 0; j2 < copy.length; j2++)
+				for (int j2 = 0; j2 < copy.length; j2++) {
 					copy[i2][j2] = img[i][i2][j2];
+				}
 			}
 
 			for (int j = 0; j < img[0].length; j++) {
@@ -460,8 +488,9 @@ public class SpriteFilter {
 		for (int i = 0; i < img.length; i++) {
 			// copy array, .clone() is stupid
 			for (int i2 = 0; i2 < copy.length; i2++) {
-				for (int j2 = 0; j2 < copy.length; j2++)
+				for (int j2 = 0; j2 < copy.length; j2++) {
 					copy[i2][j2] = img[i][i2][j2];
+				}
 			}
 
 			for (int j = 0; j < img[0].length; j++) {
@@ -483,8 +512,9 @@ public class SpriteFilter {
 		for (int i = 0; i < img.length; i++) {
 			// copy array, .clone() is stupid
 			for (int i2 = 0; i2 < copy.length; i2++) {
-				for (int j2 = 0; j2 < copy.length; j2++)
+				for (int j2 = 0; j2 < copy.length; j2++) {
 					copy[i2][j2] = img[i][i2][j2];
+				}
 			}
 
 			for (int j = 0; j < img[0].length; j++) {
@@ -504,11 +534,12 @@ public class SpriteFilter {
 	 */
 	public static byte[][][] squishFilter(byte[][][] img) {
 		for (int i = 0; i < img.length; i++) {
-			for (int j = 0; j < img[0].length; j++)
+			for (int j = 0; j < img[0].length; j++) {
 				for (int k = 0; k < img[0][0].length; k++) {
 					int dir = (k%2) == 0 ? 1 : -1;
 					img[i][j][k] = img[i][j][k+dir];
 				}
+			}
 		}
 		return img;
 	}
@@ -586,8 +617,9 @@ public class SpriteFilter {
 		// add palette data, starting at end of sheet
 		int i = SPRITESIZE;
 		for (byte b : palData) {
-			if (i == bytemap.length)
+			if (i == bytemap.length) {
 				break;
+			}
 			bytemap[i] = b;
 			i++;
 		}
