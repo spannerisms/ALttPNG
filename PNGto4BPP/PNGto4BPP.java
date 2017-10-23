@@ -1098,16 +1098,16 @@ public class PNGto4BPP {
 	 */
 	public static byte[] palDataFromArray(int[] pal) {
 		// create palette data as 5:5:5
-		ByteBuffer palRet = ByteBuffer.allocate(0x80);
+		ByteBuffer palRet = ByteBuffer.allocate(0x78);
 
-		for (int i = 0; i < 16; i++) {
+		for (int i = 1; i < 16; i++) {
 			for (int t = 0; t < 4; t++) {
 				int r = pal[i+16*t] / 1000000;
 				int g = (pal[i+16*t] % 1000000) / 1000;
 				int b = pal[i+16*t] % 1000;
 				short s = (short) ((( b / 8) << 10) | ((( g / 8) << 5) | ((( r / 8) << 0))));
 				// put color into every mail palette
-				palRet.putShort(30*t+i*2,Short.reverseBytes(s));
+				palRet.putShort(30*t+((i-1)*2),Short.reverseBytes(s));
 			}
 		}
 
@@ -1261,7 +1261,7 @@ public class PNGto4BPP {
 		// end 4BPP
 
 		// add palette data, starting at end of sheet
-		int i = 896*32-2;
+		int i = 896*32;
 		for (byte b : palData) {
 			if (i == bytemap.length) {
 				break;
