@@ -1,7 +1,6 @@
 package SpriteFilter;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,6 +9,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -21,8 +23,8 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.Border;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 public class SpriteFilter {
 	// to spit out errors
@@ -42,6 +44,7 @@ public class SpriteFilter {
 			{0,2},{0,3},{1,2},{1,3},{2,2},{2,3},{3,2},{3,3},
 			{4,2},{4,3},{5,2},{5,3},{6,2},{6,3},{7,2},{7,3}
 	};
+
 	static final String[][] FILTERS = {
 			{ "Static",
 				"Randomizes pixels of specific indices.",
@@ -73,19 +76,22 @@ public class SpriteFilter {
 				"Squishes sprite vertically.",
 				null },
 			};
+
 	public static void main(String[] args) throws IOException {
-		// have to have this up here or nimbus overrides everything
-		// stupid nimbus
+		// have to have this up here or LAF overrides everything
+		// stupid LAF
 		final JTextPane flagTextInfo = new JTextPane();
 		flagTextInfo.setEditable(false);
 		flagTextInfo.setHighlighter(null);
-		flagTextInfo.setBackground(new Color(214,217,223,255));
+		flagTextInfo.setBackground(null);
 
-		//try to set Nimbus
+		//try to set LAF
 		try {
-			NimbusLookAndFeel lookAndFeel = new NimbusLookAndFeel();
-			UIManager.setLookAndFeel(lookAndFeel);
-		} catch (UnsupportedLookAndFeelException e) {
+			UIManager.setLookAndFeel("metal");
+		} catch (UnsupportedLookAndFeelException
+				| ClassNotFoundException
+				| InstantiationException
+				| IllegalAccessException e) {
 			// try to set System default
 			try {
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -95,15 +101,20 @@ public class SpriteFilter {
 					| IllegalAccessException e2) {
 					// do nothing
 			} //end System
-		} // end Nimbus
+		} // end LAF
 
 		final JFrame frame = new JFrame("Sprite Filter");
 		final Dimension d = new Dimension(600,382);
+		Border bothPad = BorderFactory.createEmptyBorder(0,6,0,6);
+		Border allPad = BorderFactory.createEmptyBorder(3,3,3,3);
+		Border bottomPad = BorderFactory.createEmptyBorder(0,0,3,0);
+		Border smAllPad = BorderFactory.createEmptyBorder(1,1,1,1);
 		final JTextField fileName = new JTextField("");
 		final JTextField flags = new JTextField();
 		final JButton fileNameBtn = new JButton("Load SPR file");
 		final JButton goBtn = new JButton("Apply Filter!");
-		final JLabel optlbl = new JLabel("   Flag and filter   ");
+		final JLabel optlbl = new JLabel("Flag and filter");
+		optlbl.setBorder(bothPad);
 
 		String[] filterNames = new String[FILTERS.length];
 		for (int i = 0; i < filterNames.length; i++) {
@@ -118,6 +129,10 @@ public class SpriteFilter {
 		final JPanel goWrap = new JPanel(new BorderLayout());
 		final JPanel goBtnWrap = new JPanel(new BorderLayout());
 		final JPanel bothWrap = new JPanel(new BorderLayout());
+
+		frame2.setBorder(allPad);
+		goWrap.setBorder(smAllPad);
+		imgWrap.setBorder(bottomPad);
 
 		imgWrap.add(fileName,BorderLayout.CENTER);
 		imgWrap.add(fileNameBtn,BorderLayout.EAST);
@@ -138,6 +153,12 @@ public class SpriteFilter {
 		frame.setResizable(false);
 		frame.setLocation(200,200);
 
+		// ico - Credit goes to Hoodyha
+		final ImageIcon ico = new ImageIcon(
+				SpriteFilter.class.getResource("/SpriteFilter/ico.png")
+			);
+		frame.setIconImage(ico.getImage());
+
 		// file explorer
 		final JFileChooser explorer = new JFileChooser();
 		// can't clear text due to wonky code
@@ -153,6 +174,7 @@ public class SpriteFilter {
 				}
 				flagTextInfo.setText(filterText + "\n" + flagText);
 			}});
+
 		fileNameBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				explorer.removeChoosableFileFilter(sprFilter);
@@ -173,6 +195,7 @@ public class SpriteFilter {
 				}
 				explorer.removeChoosableFileFilter(sprFilter);
 			}});
+
 		goBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				String fileN = fileName.getText();
