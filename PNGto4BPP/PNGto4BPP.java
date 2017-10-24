@@ -19,6 +19,7 @@ import java.io.StringWriter;
 import java.nio.ByteBuffer;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -32,7 +33,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 import java.io.FileInputStream; 
 
@@ -42,13 +42,13 @@ public class PNGto4BPP {
 	public PNGto4BPP() {super();}
 	static final PNGto4BPP controller = new PNGto4BPP();
 	// accepted extensions
-	final static String[] IMAGEEXTS = { "png" };
-	final static String[] PALETTEEXTS = { "gpl", "pal", "txt" };
-	final static String[] BINARYEXTS = { "pal" };
-	final static String[] SPREXTS = { "spr" };
-	final static String[] ROMEXTS = { "sfc" };
-	final static String[] EXPORTEXTS = { "spr", "sfc" };
-	final static String[] LOGEXTS = { "txt" };
+	static final String[] IMAGEEXTS = { "png" };
+	static final String[] PALETTEEXTS = { "gpl", "pal", "txt" };
+	static final String[] BINARYEXTS = { "pal" };
+	static final String[] SPREXTS = { "spr" };
+	static final String[] ROMEXTS = { "sfc" };
+	static final String[] EXPORTEXTS = { "spr", "sfc" };
+	static final String[] LOGEXTS = { "txt" };
 
 	//These fields are utilized by functions
 	static final JTextField imageName = new JTextField("");
@@ -76,11 +76,13 @@ public class PNGto4BPP {
 
 	// main and stuff
 	public static void main(String[] args) {
-		//try to set Nimbus
+		//try to set metal
 		try {
-			NimbusLookAndFeel lookAndFeel = new NimbusLookAndFeel();
-			UIManager.setLookAndFeel(lookAndFeel);
-		} catch (UnsupportedLookAndFeelException e) {
+			UIManager.setLookAndFeel("metal");
+		} catch (UnsupportedLookAndFeelException
+				| ClassNotFoundException
+				| InstantiationException
+				| IllegalAccessException e) {
 			// try to set System default
 			try {
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -90,7 +92,7 @@ public class PNGto4BPP {
 					| IllegalAccessException e2) {
 					// do nothing
 			} //end System
-		} // end Nimbus
+		} // end metal
 
 		// window building
 		final JFrame frame = new JFrame("PNG to SNES 4BPP");
@@ -132,6 +134,10 @@ public class PNGto4BPP {
 				"Zarby89", // various documentation and answers
 				"Damon", // Paint.NET palettes
 				"Sosuke3" // various snes code answers
+				}, ", "));
+		peepsList.append("\n\nIcon by:\n");
+		peepsList.append(join(new String[]{
+				"Hoodyha"
 				}, ", "));
 		aboutFrame.add(peepsList);
 		// debug text
@@ -204,6 +210,15 @@ public class PNGto4BPP {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
 		frame.setLocation(200,200);
+
+		// ico
+		final ImageIcon ico = new ImageIcon(
+				PNGto4BPP.class.getResource("/PNGto4BPP/ico.png")
+			);
+		frame.setIconImage(ico.getImage());
+		debugFrame.setIconImage(ico.getImage());
+		aboutFrame.setIconImage(ico.getImage());
+
 		frame.setVisible(true);
 		// can't clear text due to wonky code
 		// have to set a blank file instead
