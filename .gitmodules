@@ -1,0 +1,3 @@
+[submodule "SpriteAnimator"]
+	path = SpriteAnimator
+	url = https://github.com/fatmanspanda/SpriteAnimator.git
