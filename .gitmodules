@@ -1,3 +1,9 @@
 [submodule "SpriteAnimator"]
 	path = SpriteAnimator
 	url = https://github.com/fatmanspanda/SpriteAnimator.git
+[submodule "PNGto4BPP"]
+	path = PNGto4BPP
+	url = https://github.com/fatmanspanda/PNGto4BPP.git
+[submodule "SpriteFilter"]
+	path = SpriteFilter
+	url = https://github.com/fatmanspanda/SpriteFilter.git
